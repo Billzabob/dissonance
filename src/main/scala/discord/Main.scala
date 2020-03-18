@@ -13,7 +13,7 @@ import org.http4s.client.jdkhttpclient._
 import org.http4s.headers._
 import org.http4s.implicits._
 import org.http4s.Method._
-import discord.model.Payload
+import discord.model._
 
 object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
@@ -46,9 +46,9 @@ object Main extends IOApp {
   def processEvents(connection: WSConnectionHighLevel[IO]): Stream[IO, Unit] =
     connection.receiveStream
       .collect { case WSFrame.Text(data, _) => data } // Will always be text since we request JSON encoding
-      .map(decode[Payload])
+      .map(decode[Event])
       .rethrow
-      .map(_.d)
+      .collect { case Hello(interval) => interval }
       .take(1)
       .showLinesStdOut
 
