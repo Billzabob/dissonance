@@ -28,10 +28,11 @@ case class Ready(
     user: Json,
     sessionId: String
 ) extends DispatchEvent
-case class GuildCreate(json: Json)   extends DispatchEvent
-case class MessageCreate(json: Json) extends DispatchEvent
-case class TypingStart(json: Json)   extends DispatchEvent
-case class ReactionAdd(json: Json)   extends DispatchEvent
+case class GuildCreate(json: Json)    extends DispatchEvent
+case class MessageCreate(json: Json)  extends DispatchEvent
+case class TypingStart(json: Json)    extends DispatchEvent
+case class ReactionAdd(json: Json)    extends DispatchEvent
+case class PresenceUpdate(json: Json) extends DispatchEvent
 
 object Event {
   implicit val eventDecoder: Decoder[Event] = cursor =>
@@ -74,6 +75,8 @@ object Dispatch {
       data.as[Json].map(TypingStart)
     case "MESSAGE_REACTION_ADD" =>
       data.as[Json].map(ReactionAdd)
+    case "PRESENCE_UPDATE" =>
+      data.as[Json].map(PresenceUpdate)
     case unknown =>
       DecodingFailure(s"Unknown event name received: $unknown", data.history).asLeft
   }

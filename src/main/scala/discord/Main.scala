@@ -1,14 +1,13 @@
 package discord
 
 import cats.effect._
-import cats.effect.concurrent.Ref
+import cats.effect.concurrent._
 import cats.implicits._
 import discord.utils._
 import discord.model.GetGatewayResponse
 import discord.model._
 import fs2.Stream
 import io.circe.parser._
-import io.circe.syntax._
 import java.net.http.HttpClient
 import org.http4s.Method._
 import org.http4s._
@@ -18,7 +17,6 @@ import org.http4s.client.jdkhttpclient.WSFrame._
 import org.http4s.client.jdkhttpclient._
 import org.http4s.headers._
 import org.http4s.implicits._
-import scala.concurrent.duration.FiniteDuration
 
 object Main extends IOApp with CirceEntityDecoder {
   override def run(args: List[String]): IO[ExitCode] = {
@@ -27,9 +25,9 @@ object Main extends IOApp with CirceEntityDecoder {
     clients.flatMap {
       case (client, wsClient) =>
         for {
-          uri            <- getUri(client)
-          sequenceNumber <- Ref[IO].of(none[Int])
-          _              <- processEvents(wsClient, uri, sequenceNumber)
+          uri         <- getUri(client)
+          heartbeater <- Heartbeater.make
+          _           <- processEvents(wsClient, uri, heartbeater)
         } yield ExitCode.Success
     }
   }
@@ -42,15 +40,15 @@ object Main extends IOApp with CirceEntityDecoder {
       .rethrow
       .map(_.withQueryParam("v", 6).withQueryParam("encoding", "json"))
 
-  def processEvents(wsClient: WSClient[IO], uri: Uri, sequenceNumber: SequenceNumber): IO[Unit] =
+  def processEvents(wsClient: WSClient[IO], uri: Uri, h: Heartbeater): IO[Unit] =
     Stream
       .resource(wsClient.connectHighLevel(WSRequest(uri, headers)))
-      .flatMap(events(sequenceNumber))
+      .flatMap(events(h))
       .evalMap(handleEvent)
       .compile
       .drain
 
-  def events(sequenceNumber: SequenceNumber)(connection: WSConnectionHighLevel[IO]): Stream[IO, DispatchEvent] = {
+  def events(heartbeater: Heartbeater)(connection: WSConnectionHighLevel[IO]): Stream[IO, DispatchEvent] = {
     connection.receiveStream
       .collect {
         // Will always be text since we request JSON encoding
@@ -60,16 +58,17 @@ object Main extends IOApp with CirceEntityDecoder {
       .rethrow
       .map {
         case Hello(interval) =>
-          Stream.eval(putStrLn[IO]("Hello Received") >> connection.send(Text(identity))).drain ++ heartbeat(interval, connection, sequenceNumber).drain
+          Stream.eval(connection.send(identityMessage)).drain ++ heartbeater.heartbeat(interval, connection).drain
         case HeartBeatAck =>
-          Stream.eval(putStrLn[IO]("Heartbeat ack received")).drain // TODO: Handle when Discord stops sending acks
+          Stream.eval(heartbeater.receivedAck).drain
         case Heartbeat(d) =>
           Stream.eval(putStrLn[IO](s"Heartbeat received: $d")).drain
         case Dispatch(nextSequenceNumber, event) =>
-          Stream.eval(sequenceNumber.set(nextSequenceNumber.some)).drain ++ Stream.emit(event)
+          Stream.eval(heartbeater.updateSequenceNumber(nextSequenceNumber)).drain ++ Stream.emit(event)
       }
       .parJoinUnbounded
       .interruptWhen(connection.closeFrame.get.map(checkForGracefulClose))
+      .interruptWhen(heartbeater.flatlined)
   }
 
   def checkForGracefulClose(closeFrame: Close): Either[Throwable, Unit] = closeFrame match {
@@ -90,24 +89,20 @@ object Main extends IOApp with CirceEntityDecoder {
       putStrLn[IO]("Typing start received")
     case ReactionAdd(_) =>
       putStrLn[IO]("Reaction add received")
+    case PresenceUpdate(_) =>
+      putStrLn[IO]("Presence update received")
   }
 
   val token =
     "Njc5NzY4MTU0NjcwNDk3OTA1.XnBLgA.J1aQdB5Kk15QE3faPBRPGePsUfI"
 
-  val identity =
-    s"""{"op":2,"d":{"token":"$token","properties":{"$$os":"","$$browser":"","$$device":""}}}"""
-
-  def heartbeat(interval: FiniteDuration, connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber): Stream[IO, Unit] = {
-    val sendHeartbeat = putStrLn[IO]("Sending heartbeat") >> makeHeartbeat(sequenceNumber).flatMap(connection.send)
-    Stream.eval(sendHeartbeat) ++ Stream.repeatEval(sendHeartbeat).metered(interval)
-  }
-
-  def makeHeartbeat(sequenceNumber: SequenceNumber) =
-    sequenceNumber.get.map(Heartbeat.apply).map(heartbeat => Text(heartbeat.asJson.noSpaces))
+  val identityMessage =
+    Text(s"""{"op":2,"d":{"token":"$token","properties":{"$$os":"","$$browser":"","$$device":""}}}""")
 
   val headers: Headers =
     Headers.of(Authorization(Credentials.Token("Bot".ci, token)))
 
   type SequenceNumber = Ref[IO, Option[Int]]
+  type AckReceived    = Ref[IO, Boolean]
+  type ConnectionDead = Deferred[IO, Unit]
 }
