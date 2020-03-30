@@ -8,15 +8,19 @@ import discord.model.GetGatewayResponse
 import discord.model._
 import fs2.Stream
 import io.circe.parser._
+import io.circe.syntax._
 import java.net.http.HttpClient
 import org.http4s.Method._
 import org.http4s._
 import org.http4s.circe.CirceEntityDecoder
+import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.jdkhttpclient.WSFrame._
 import org.http4s.client.jdkhttpclient._
 import org.http4s.headers._
 import org.http4s.implicits._
+import io.circe.Json
+import org.http4s.client.dsl.io._
 
 object Main extends IOApp with CirceEntityDecoder {
   override def run(args: List[String]): IO[ExitCode] = {
@@ -27,24 +31,26 @@ object Main extends IOApp with CirceEntityDecoder {
         for {
           uri         <- getUri(client)
           heartbeater <- Heartbeater.make
-          _           <- processEvents(wsClient, uri, heartbeater)
+          _           <- processEvents(wsClient, client, uri, heartbeater)
         } yield ExitCode.Success
     }
   }
 
+  val apiUri = uri"https://discordapp.com/api"
+
   def getUri(client: Client[IO]): IO[Uri] =
     client
-      .expect[GetGatewayResponse](Request[IO](GET, uri"https://discordapp.com/api/gateway/bot", headers = headers))
+      .expect[GetGatewayResponse](GET(apiUri.addPath("gateway/bot"), headers))
       .map(_.url)
       .map(Uri.fromString)
       .rethrow
       .map(_.withQueryParam("v", 6).withQueryParam("encoding", "json"))
 
-  def processEvents(wsClient: WSClient[IO], uri: Uri, h: Heartbeater): IO[Unit] =
+  def processEvents(wsClient: WSClient[IO], client: Client[IO], uri: Uri, h: Heartbeater): IO[Unit] =
     Stream
-      .resource(wsClient.connectHighLevel(WSRequest(uri, headers)))
+      .resource(wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers))))
       .flatMap(events(h))
-      .evalMap(handleEvent)
+      .evalMap(handleEvent(client))
       .compile
       .drain
 
@@ -78,13 +84,24 @@ object Main extends IOApp with CirceEntityDecoder {
       new Exception(s"Connection closed with error: $status $reason").asLeft
   }
 
-  def handleEvent(event: DispatchEvent) = event match {
+  def handleEvent(client: Client[IO])(event: DispatchEvent) = event match {
     case Ready(_, _, _) =>
       putStrLn[IO]("Ready received")
     case GuildCreate(_) =>
       putStrLn[IO]("Guild create received")
     case MessageCreate(json) =>
-      json.hcursor.get[String]("content").liftTo[IO].map(_.toUpperCase).flatMap(putStrLn[IO])
+      val cursor = json.hcursor
+      (cursor.get[String]("channel_id"), cursor.get[String]("content")).tupled.liftTo[IO].flatMap { case (channel, message) =>
+        if (message == "ping")
+          client.expect[Json](POST(
+            Json.obj("content" -> "pong".asJson),
+            apiUri.addPath(s"channels/$channel/messages"),
+            headers
+          )).map(_.spaces2SortKeys).flatMap(putStrLn[IO])
+        else {
+          IO.unit
+        }
+      }
     case TypingStart(_) =>
       putStrLn[IO]("Typing start received")
     case ReactionAdd(_) =>
@@ -99,8 +116,8 @@ object Main extends IOApp with CirceEntityDecoder {
   val identityMessage =
     Text(s"""{"op":2,"d":{"token":"$token","properties":{"$$os":"","$$browser":"","$$device":""}}}""")
 
-  val headers: Headers =
-    Headers.of(Authorization(Credentials.Token("Bot".ci, token)))
+  val headers =
+    Authorization(Credentials.Token("Bot".ci, token))
 
   type SequenceNumber = Ref[IO, Option[Int]]
   type AckReceived    = Ref[IO, Boolean]
