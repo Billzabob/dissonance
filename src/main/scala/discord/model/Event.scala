@@ -28,11 +28,16 @@ case class Ready(
     user: Json,
     sessionId: String
 ) extends DispatchEvent
-case class GuildCreate(json: Json)    extends DispatchEvent
-case class MessageCreate(json: Json)  extends DispatchEvent
-case class TypingStart(json: Json)    extends DispatchEvent
-case class ReactionAdd(json: Json)    extends DispatchEvent
-case class PresenceUpdate(json: Json) extends DispatchEvent
+case class GuildCreate(json: Json)         extends DispatchEvent
+case class MessageCreate(message: Message) extends DispatchEvent
+case class TypingStart(json: Json)         extends DispatchEvent
+case class ReactionAdd(json: Json)         extends DispatchEvent
+case class PresenceUpdate(json: Json)      extends DispatchEvent
+
+case class Message(channelId: String, content: String)
+object Message {
+  implicit val messageDecoder: Decoder[Message] = deriveConfiguredDecoder
+}
 
 object Event {
   implicit val eventDecoder: Decoder[Event] = cursor =>
@@ -70,7 +75,7 @@ object Dispatch {
     case "GUILD_CREATE" =>
       data.as[Json].map(GuildCreate)
     case "MESSAGE_CREATE" =>
-      data.as[Json].map(MessageCreate)
+      data.as[Message].map(MessageCreate)
     case "TYPING_START" =>
       data.as[Json].map(TypingStart)
     case "MESSAGE_REACTION_ADD" =>
