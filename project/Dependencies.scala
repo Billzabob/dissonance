@@ -3,11 +3,11 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val fs2             = "2.2.2"
+    val fs2             = "2.3.0"
     val cats            = "2.1.1"
     val circe           = "0.13.0"
     val slf4j           = "1.7.30"
-    val http4s          = "0.21.1"
+    val http4s          = "0.21.2"
     val newtype         = "0.4.3"
     val decline         = "1.0.0"
     val refined         = "0.9.13"

@@ -34,10 +34,11 @@ object Main extends IOApp with CirceEntityDecoder {
     clients.flatMap {
       case (client, wsClient) =>
         for {
+          uri            <- getUri(client)
           sequenceNumber <- Ref[IO].of(none[Int])
           sessionId      <- Ref[IO].of(none[String])
           acks           <- SignallingRef[IO, Unit](())
-          _              <- processEvents(client, wsClient, sequenceNumber, acks, sessionId).evalMap(handleEvent(client)).compile.drain
+          _              <- processEvents(uri, wsClient, sequenceNumber, acks, sessionId).evalMap(handleEvent(client)).compile.drain
         } yield ExitCode.Success
     }
   }
@@ -55,26 +56,17 @@ object Main extends IOApp with CirceEntityDecoder {
   def fakeResource(i: Int) = Resource.make(putStrLn[IO](s"Acquiring Resource $i"))(_ => putStrLn[IO](s"Releasing Resource $i"))
 
   def processEvents(
-      client: Client[IO],
+      uri: Uri,
       wsClient: WSClient[IO],
       sequenceNumber: SequenceNumber,
       acks: AckSignal,
       sessionId: SessionId
   ): Stream[IO, DispatchEvent] =
     Stream
-      .eval(getUri(client))
-      .flatMap { uri =>
-        Stream
-          .resource(fakeResource(1) >> wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers))).flatMap(c => fakeResource(2).as(c)))
-      }
+      .resource(fakeResource(1) >> wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers))).flatMap(c => fakeResource(2).as(c)))
       .evalTap(_ => putStrLn[IO]("Connected and ready"))
       .flatMap(events(sequenceNumber, acks, sessionId))
-      .handleErrorWith {
-        case SessionInvalid(resumable) =>
-          Stream.sleep_(5.seconds) ++ (if (!resumable) Stream.eval_(sessionId.set(None)) else Stream.empty)
-        case other =>
-          Stream.eval_(putStrLn[IO](other.toString))
-      }
+      .handleErrorWith(e => Stream.eval_(putStrLn[IO](e.toString)))
       .repeat
 
   def events(
@@ -97,8 +89,7 @@ object Main extends IOApp with CirceEntityDecoder {
         case Heartbeat(d) =>
           Stream.eval_(putStrLn[IO](s"Heartbeat received: $d"))
         case InvalidSession(resumable) =>
-          // TODO: Raising errors restarts the connection, which we probably don't need to do in this scenario
-          Stream.raiseError[IO](SessionInvalid(resumable))
+          Stream.eval_(putStrLn[IO](s"Invalid session received: $resumable"))
         case Dispatch(_, event @ Ready(_, _, id)) =>
           Stream.eval_(putStrLn[IO](s"Ready received: $id")) ++ Stream.eval_(sessionId.set(id.some)) ++ Stream.emit(event)
         case Dispatch(nextSequenceNumber, event) =>
@@ -129,10 +120,7 @@ object Main extends IOApp with CirceEntityDecoder {
       putStrLn[IO]("Guild create received")
     case MessageCreate(message) =>
       if (message.content == "ping")
-        client
-          .expect[Json](POST(Json.obj("content" -> "pong".asJson), apiUri.addPath(s"channels/${message.channelId}/messages"), headers))
-          .map(_.spaces2SortKeys)
-          .flatMap(putStrLn[IO])
+        client.expect[Json](POST(Json.obj("content" -> "pong".asJson), apiUri.addPath(s"channels/${message.channelId}/messages"), headers)).void
       else IO.unit
     case TypingStart(_) =>
       putStrLn[IO]("Typing start received")
@@ -170,7 +158,7 @@ object Main extends IOApp with CirceEntityDecoder {
   // TODO: Make these wrappers around these types for easier usage
   type SequenceNumber = Ref[IO, Option[Int]]
   type SessionId      = Ref[IO, Option[String]]
-  // TODO: Can these Signals just be Queues
+  // TODO: Should these be Signals or Queues?
   type AckSignal      = SignallingRef[IO, Unit]
   type AckSignal2     = Signal[IO, Unit]
 
