@@ -24,6 +24,7 @@ import io.circe.Json
 import org.http4s.client.dsl.io._
 import scala.concurrent.duration.FiniteDuration
 import fs2.concurrent.Signal
+import scala.concurrent.duration._
 import scala.util.control.NoStackTrace
 
 object Main extends IOApp with CirceEntityDecoder {
@@ -33,10 +34,10 @@ object Main extends IOApp with CirceEntityDecoder {
     clients.flatMap {
       case (client, wsClient) =>
         for {
-          uri            <- getUri(client)
           sequenceNumber <- Ref[IO].of(none[Int])
+          sessionId      <- Ref[IO].of(none[String])
           acks           <- SignallingRef[IO, Unit](())
-          _              <- processEvents(wsClient, client, uri, sequenceNumber, acks)
+          _              <- processEvents(client, wsClient, sequenceNumber, acks, sessionId).evalMap(handleEvent(client)).compile.drain
         } yield ExitCode.Success
     }
   }
@@ -51,15 +52,36 @@ object Main extends IOApp with CirceEntityDecoder {
       .rethrow
       .map(_.withQueryParam("v", 6).withQueryParam("encoding", "json"))
 
-  def processEvents(wsClient: WSClient[IO], client: Client[IO], uri: Uri, sequenceNumber: SequenceNumber, acks: AckSignal): IO[Unit] =
-    Stream
-      .resource(wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers))))
-      .flatMap(events(sequenceNumber, acks))
-      .evalMap(handleEvent(client))
-      .compile
-      .drain
+  def fakeResource(i: Int) = Resource.make(putStrLn[IO](s"Acquiring Resource $i"))(_ => putStrLn[IO](s"Releasing Resource $i"))
 
-  def events(sequenceNumber: SequenceNumber, acks: AckSignal)(connection: WSConnectionHighLevel[IO]): Stream[IO, DispatchEvent] = {
+  def processEvents(
+      client: Client[IO],
+      wsClient: WSClient[IO],
+      sequenceNumber: SequenceNumber,
+      acks: AckSignal,
+      sessionId: SessionId
+  ): Stream[IO, DispatchEvent] =
+    Stream
+      .eval(getUri(client))
+      .flatMap { uri =>
+        Stream
+          .resource(fakeResource(1) >> wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers))).flatMap(c => fakeResource(2).as(c)))
+      }
+      .evalTap(_ => putStrLn[IO]("Connected and ready"))
+      .flatMap(events(sequenceNumber, acks, sessionId))
+      .handleErrorWith {
+        case SessionInvalid(resumable) =>
+          Stream.sleep_(5.seconds) ++ (if (!resumable) Stream.eval_(sessionId.set(None)) else Stream.empty)
+        case other =>
+          Stream.eval_(putStrLn[IO](other.toString))
+      }
+      .repeat
+
+  def events(
+      sequenceNumber: SequenceNumber,
+      acks: AckSignal,
+      sessionId: SessionId
+  )(connection: WSConnectionHighLevel[IO]): Stream[IO, DispatchEvent] = {
     connection.receiveStream
       .collect {
         // Will always be text since we request JSON encoding
@@ -69,16 +91,28 @@ object Main extends IOApp with CirceEntityDecoder {
       .rethrow
       .map {
         case Hello(interval) =>
-          Stream.eval_(connection.send(identityMessage)) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
+          Stream.eval_(identifyOrResume(sessionId, sequenceNumber).flatMap(connection.send)) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
         case HeartBeatAck =>
           Stream.eval_(putStrLn[IO]("Heartbeat ack received") >> acks.set(()))
         case Heartbeat(d) =>
           Stream.eval_(putStrLn[IO](s"Heartbeat received: $d"))
+        case InvalidSession(resumable) =>
+          // TODO: Raising errors restarts the connection, which we probably don't need to do in this scenario
+          Stream.raiseError[IO](SessionInvalid(resumable))
+        case Dispatch(_, event @ Ready(_, _, id)) =>
+          Stream.eval_(putStrLn[IO](s"Ready received: $id")) ++ Stream.eval_(sessionId.set(id.some)) ++ Stream.emit(event)
         case Dispatch(nextSequenceNumber, event) =>
           Stream.eval_(sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(event)
       }
       .parJoinUnbounded
-      .interruptWhen(connection.closeFrame.get.map(checkForGracefulClose))
+      .interruptWhen(connection.closeFrame.get.flatTap(c => putStrLn[IO](s"CLOSE RECEIVED: $c")).map(checkForGracefulClose))
+  }
+
+  def identifyOrResume(sessionId: SessionId, sequenceNumber: SequenceNumber): IO[Text] = sessionId.get.flatMap {
+    case None =>
+      identityMessage.pure[IO]
+    case Some(id) =>
+      sequenceNumber.get.map(s => resumeMessage(id, s))
   }
 
   def checkForGracefulClose(closeFrame: Close): Either[Throwable, Unit] = closeFrame match {
@@ -113,11 +147,11 @@ object Main extends IOApp with CirceEntityDecoder {
 
   def heartbeat(interval: FiniteDuration, connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: AckSignal2): Stream[IO, Unit] = {
     val sendHeartbeat = putStrLn[IO]("Sending heartbeat") >> makeHeartbeat(sequenceNumber).flatMap(connection.send)
-    val heartbeats = Stream.eval(sendHeartbeat) ++ Stream.repeatEval(sendHeartbeat).metered(interval)
+    val heartbeats    = Stream.eval(sendHeartbeat) ++ Stream.repeatEval(sendHeartbeat).metered(interval)
 
     (heartbeats.as(true) merge acks.discrete.as(false)).sliding(2).map(_.toList).flatMap {
       case List(true, true) => Stream.raiseError[IO](NoHeartbeatAck)
-      case _ => Stream.emit(())
+      case _                => Stream.emit(())
     }
   }
 
@@ -127,14 +161,20 @@ object Main extends IOApp with CirceEntityDecoder {
   val identityMessage =
     Text(s"""{"op":2,"d":{"token":"$token","properties":{"$$os":"","$$browser":"","$$device":""}}}""")
 
+  def resumeMessage(sessionId: String, sequenceNumber: Option[Int]) =
+    Text(s"""{"op":6,"d":{"token":"$token","session_id":"$sessionId","seq":"$sequenceNumber"}}""")
+
   val headers =
     Authorization(Credentials.Token("Bot".ci, token))
 
   // TODO: Make these wrappers around these types for easier usage
   type SequenceNumber = Ref[IO, Option[Int]]
-  type AckSignal = SignallingRef[IO, Unit]
-  type AckSignal2 = Signal[IO, Unit]
+  type SessionId      = Ref[IO, Option[String]]
+  // TODO: Can these Signals just be Queues
+  type AckSignal      = SignallingRef[IO, Unit]
+  type AckSignal2     = Signal[IO, Unit]
 
-  case object NoHeartbeatAck extends Throwable with NoStackTrace
-  case class ConnectionClosedWithError(statusCode: Int, reason: String) extends Throwable with NoStackTrace
+  case class ConnectionClosedWithError(statusCode: Int, reason: String) extends NoStackTrace
+  case class SessionInvalid(resumable: Boolean)                         extends NoStackTrace
+  case object NoHeartbeatAck                                            extends NoStackTrace
 }

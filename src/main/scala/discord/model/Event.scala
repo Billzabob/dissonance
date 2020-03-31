@@ -11,10 +11,15 @@ sealed trait Event                                  extends Product with Seriali
 case object HeartBeatAck                            extends Event
 case class Hello(heartbeatInterval: FiniteDuration) extends Event
 case class Heartbeat(d: Option[Int])                extends Event
+case class InvalidSession(d: Boolean)               extends Event
 case class Dispatch(s: Int, d: DispatchEvent)       extends Event
 
 object Hello {
   implicit val helloDecoder: Decoder[Hello] = deriveConfiguredDecoder
+}
+
+object InvalidSession {
+  implicit val invalidSessionDecoder: Decoder[InvalidSession] = deriveConfiguredDecoder
 }
 
 object Heartbeat {
@@ -51,6 +56,8 @@ object Event {
       data.as[Dispatch]
     case 1 =>
       data.get[Heartbeat]("d")
+    case 9 =>
+      data.as[InvalidSession]
     case 10 =>
       data.get[Hello]("d")
     case 11 =>
