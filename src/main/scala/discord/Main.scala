@@ -53,8 +53,6 @@ object Main extends IOApp with CirceEntityDecoder {
       .rethrow
       .map(_.withQueryParam("v", 6).withQueryParam("encoding", "json"))
 
-  def fakeResource(i: Int) = Resource.make(putStrLn[IO](s"Acquiring Resource $i"))(_ => putStrLn[IO](s"Releasing Resource $i"))
-
   def processEvents(
       uri: Uri,
       wsClient: WSClient[IO],
@@ -63,7 +61,7 @@ object Main extends IOApp with CirceEntityDecoder {
       sessionId: SessionId
   ): Stream[IO, DispatchEvent] =
     Stream
-      .resource(fakeResource(1) >> wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers))).flatMap(c => fakeResource(2).as(c)))
+      .resource(wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers))))
       .evalTap(_ => putStrLn[IO]("Connected and ready"))
       .flatMap(events(sequenceNumber, acks, sessionId))
       .handleErrorWith(e => Stream.eval_(putStrLn[IO](e.toString)))
@@ -75,28 +73,36 @@ object Main extends IOApp with CirceEntityDecoder {
       sessionId: SessionId
   )(connection: WSConnectionHighLevel[IO]): Stream[IO, DispatchEvent] = {
     connection.receiveStream
+      .evalTap(frame => putStrLn[IO](frame.toString))
       .collect {
         // Will always be text since we request JSON encoding
         case Text(data, _) => data
       }
       .map(decode[Event])
       .rethrow
-      .map {
-        case Hello(interval) =>
-          Stream.eval_(identifyOrResume(sessionId, sequenceNumber).flatMap(connection.send)) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
-        case HeartBeatAck =>
-          Stream.eval_(putStrLn[IO]("Heartbeat ack received") >> acks.set(()))
-        case Heartbeat(d) =>
-          Stream.eval_(putStrLn[IO](s"Heartbeat received: $d"))
-        case InvalidSession(resumable) =>
-          Stream.eval_(putStrLn[IO](s"Invalid session received: $resumable"))
-        case Dispatch(_, event @ Ready(_, _, id)) =>
-          Stream.eval_(putStrLn[IO](s"Ready received: $id")) ++ Stream.eval_(sessionId.set(id.some)) ++ Stream.emit(event)
-        case Dispatch(nextSequenceNumber, event) =>
-          Stream.eval_(sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(event)
-      }
+      .map(handleEvents(sequenceNumber, acks, sessionId, connection))
       .parJoinUnbounded
       .interruptWhen(connection.closeFrame.get.flatTap(c => putStrLn[IO](s"CLOSE RECEIVED: $c")).map(checkForGracefulClose))
+  }
+
+  def handleEvents(
+      sequenceNumber: SequenceNumber,
+      acks: AckSignal,
+      sessionId: SessionId,
+      connection: WSConnectionHighLevel[IO]
+  )(event: Event): Stream[IO, DispatchEvent] = event match {
+    case Hello(interval) =>
+      Stream.eval_(identifyOrResume(sessionId, sequenceNumber).flatMap(connection.send)) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
+    case HeartBeatAck =>
+      Stream.eval_(putStrLn[IO]("Heartbeat ack received") >> acks.set(()))
+    case Heartbeat(d) =>
+      Stream.eval_(putStrLn[IO](s"Heartbeat received: $d"))
+    case InvalidSession(resumable) =>
+      Stream.eval_(putStrLn[IO](s"Invalid session received: $resumable"))
+    case Dispatch(_, event @ Ready(_, _, id)) =>
+      Stream.eval_(putStrLn[IO](s"Ready received: $id")) ++ Stream.eval_(sessionId.set(id.some)) ++ Stream.emit(event)
+    case Dispatch(nextSequenceNumber, event) =>
+      Stream.eval_(sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(event)
   }
 
   def identifyOrResume(sessionId: SessionId, sequenceNumber: SequenceNumber): IO[Text] = sessionId.get.flatMap {
@@ -159,8 +165,8 @@ object Main extends IOApp with CirceEntityDecoder {
   type SequenceNumber = Ref[IO, Option[Int]]
   type SessionId      = Ref[IO, Option[String]]
   // TODO: Should these be Signals or Queues?
-  type AckSignal      = SignallingRef[IO, Unit]
-  type AckSignal2     = Signal[IO, Unit]
+  type AckSignal  = SignallingRef[IO, Unit]
+  type AckSignal2 = Signal[IO, Unit]
 
   case class ConnectionClosedWithError(statusCode: Int, reason: String) extends NoStackTrace
   case class SessionInvalid(resumable: Boolean)                         extends NoStackTrace
