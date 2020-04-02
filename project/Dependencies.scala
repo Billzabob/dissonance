@@ -23,7 +23,7 @@ object Dependencies {
     val cats            = "org.typelevel" %% "cats-core" % Versions.cats
     val circe           = Seq("circe-core", "circe-parser", "circe-generic-extras").map("io.circe" %% _ % Versions.circe)
     val slf4j           = "org.slf4j" % "slf4j-nop" % Versions.slf4j
-    val http4s          = Seq("http4s-circe", "http4s-blaze-server", "http4s-dsl").map("org.http4s" %% _ % Versions.http4s)
+    val http4s          = "org.http4s" %% "http4s-circe" % Versions.http4s
     val newtype         = "io.estatico" %% "newtype" % Versions.newtype
     val refined         = "eu.timepit" %% "refined" % Versions.refined
     val circeFs2        = "io.circe" %% "circe-fs2" % Versions.circeFs2
@@ -43,6 +43,7 @@ object Dependencies {
     fs2,
     cats,
     slf4j,
+    http4s,
     newtype,
     refined,
     circeFs2,
@@ -50,5 +51,5 @@ object Dependencies {
     catsEffect,
     enumeratumCirce,
     websocketClient,
-  ) ++ circe ++ http4s
+  ) ++ circe
 }

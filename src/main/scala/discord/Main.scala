@@ -62,7 +62,6 @@ object Main extends IOApp with CirceEntityDecoder {
   ): Stream[IO, DispatchEvent] =
     Stream
       .resource(wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers))))
-      .evalTap(_ => putStrLn[IO]("Connected and ready"))
       .flatMap(events(sequenceNumber, acks, sessionId))
       .handleErrorWith(e => Stream.eval_(putStrLn[IO](e.toString)))
       .repeat
@@ -73,7 +72,6 @@ object Main extends IOApp with CirceEntityDecoder {
       sessionId: SessionId
   )(connection: WSConnectionHighLevel[IO]): Stream[IO, DispatchEvent] = {
     connection.receiveStream
-      .evalTap(frame => putStrLn[IO](frame.toString))
       .collect {
         // Will always be text since we request JSON encoding
         case Text(data, _) => data
@@ -119,6 +117,7 @@ object Main extends IOApp with CirceEntityDecoder {
       ConnectionClosedWithError(status, reason).asLeft
   }
 
+  // This is basically what I imagine the user has to implement to use this framework, except with a Discord wrapper around client
   def handleEvent(client: Client[IO])(event: DispatchEvent): IO[Unit] = event match {
     case Ready(_, _, _) =>
       putStrLn[IO]("Ready received")
@@ -134,6 +133,8 @@ object Main extends IOApp with CirceEntityDecoder {
       putStrLn[IO]("Reaction add received")
     case PresenceUpdate(_) =>
       putStrLn[IO]("Presence update received")
+    case Resumed(_) =>
+      putStrLn[IO]("Resumed received")
   }
 
   val token =
@@ -143,6 +144,7 @@ object Main extends IOApp with CirceEntityDecoder {
     val sendHeartbeat = putStrLn[IO]("Sending heartbeat") >> makeHeartbeat(sequenceNumber).flatMap(connection.send)
     val heartbeats    = Stream.eval(sendHeartbeat) ++ Stream.repeatEval(sendHeartbeat).metered(interval)
 
+    // TODO: Something besides true, false
     (heartbeats.as(true) merge acks.discrete.as(false)).sliding(2).map(_.toList).flatMap {
       case List(true, true) => Stream.raiseError[IO](NoHeartbeatAck)
       case _                => Stream.emit(())

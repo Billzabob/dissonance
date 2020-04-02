@@ -38,6 +38,7 @@ case class MessageCreate(message: Message) extends DispatchEvent
 case class TypingStart(json: Json)         extends DispatchEvent
 case class ReactionAdd(json: Json)         extends DispatchEvent
 case class PresenceUpdate(json: Json)      extends DispatchEvent
+case class Resumed(json: Json)             extends DispatchEvent
 
 case class Message(channelId: String, content: String)
 object Message {
@@ -89,6 +90,8 @@ object Dispatch {
       data.as[Json].map(ReactionAdd)
     case "PRESENCE_UPDATE" =>
       data.as[Json].map(PresenceUpdate)
+    case "RESUMED" =>
+      data.as[Json].map(Resumed)
     case unknown =>
       DecodingFailure(s"Unknown event name received: $unknown", data.history).asLeft
   }
