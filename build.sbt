@@ -9,7 +9,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val root = (project in file("."))
   .settings(
-    name := "discord-bot",
+    name := "discord",
     libraryDependencies ++= dependencies,
     scalacOptions += "-Ymacro-annotations"
   )

@@ -138,7 +138,7 @@ object Main extends IOApp with CirceEntityDecoder {
   }
 
   val token =
-    "Njc5NzY4MTU0NjcwNDk3OTA1.XnBLgA.J1aQdB5Kk15QE3faPBRPGePsUfI"
+    "Njc5NzY4MTU0NjcwNDk3OTA1.XoZxFQ.P7RvsHEtMt_k2HFjCLbcWwTe13U"
 
   def heartbeat(interval: FiniteDuration, connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: AckSignal2): Stream[IO, Unit] = {
     val sendHeartbeat = putStrLn[IO]("Sending heartbeat") >> makeHeartbeat(sequenceNumber).flatMap(connection.send)
