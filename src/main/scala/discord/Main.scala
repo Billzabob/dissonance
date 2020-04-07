@@ -3,27 +3,23 @@ package discord
 import cats.effect._
 import cats.effect.concurrent._
 import cats.implicits._
-import discord.utils._
-import discord.model.GetGatewayResponse
 import discord.model._
-import fs2.concurrent.SignallingRef
+import discord.utils._
+import fs2.concurrent.Queue
 import fs2.Stream
+import io.circe.Json
 import io.circe.parser._
 import io.circe.syntax._
 import java.net.http.HttpClient
-import org.http4s.Method._
 import org.http4s._
-import org.http4s.circe.CirceEntityDecoder
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.client.jdkhttpclient.WSFrame._
+import org.http4s.client.dsl.io._
 import org.http4s.client.jdkhttpclient._
+import org.http4s.client.jdkhttpclient.WSFrame._
 import org.http4s.headers._
 import org.http4s.implicits._
-import io.circe.Json
-import org.http4s.client.dsl.io._
-import scala.concurrent.duration.FiniteDuration
-import fs2.concurrent.Signal
+import org.http4s.Method._
 import scala.concurrent.duration._
 import scala.util.control.NoStackTrace
 
@@ -37,7 +33,7 @@ object Main extends IOApp with CirceEntityDecoder {
           uri            <- getUri(client)
           sequenceNumber <- Ref[IO].of(none[Int])
           sessionId      <- Ref[IO].of(none[String])
-          acks           <- SignallingRef[IO, Unit](())
+          acks           <- Queue.unbounded[IO, Unit]
           _              <- processEvents(uri, wsClient, sequenceNumber, acks, sessionId).evalMap(handleEvent(client)).compile.drain
         } yield ExitCode.Success
     }
@@ -57,7 +53,7 @@ object Main extends IOApp with CirceEntityDecoder {
       uri: Uri,
       wsClient: WSClient[IO],
       sequenceNumber: SequenceNumber,
-      acks: AckSignal,
+      acks: Acks,
       sessionId: SessionId
   ): Stream[IO, DispatchEvent] =
     Stream
@@ -68,7 +64,7 @@ object Main extends IOApp with CirceEntityDecoder {
 
   def events(
       sequenceNumber: SequenceNumber,
-      acks: AckSignal,
+      acks: Acks,
       sessionId: SessionId
   )(connection: WSConnectionHighLevel[IO]): Stream[IO, DispatchEvent] = {
     connection.receiveStream
@@ -85,22 +81,23 @@ object Main extends IOApp with CirceEntityDecoder {
 
   def handleEvents(
       sequenceNumber: SequenceNumber,
-      acks: AckSignal,
+      acks: Acks,
       sessionId: SessionId,
       connection: WSConnectionHighLevel[IO]
   )(event: Event): Stream[IO, DispatchEvent] = event match {
     case Hello(interval) =>
       Stream.eval_(identifyOrResume(sessionId, sequenceNumber).flatMap(connection.send)) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
     case HeartBeatAck =>
-      Stream.eval_(putStrLn[IO]("Heartbeat ack received") >> acks.set(()))
+      Stream.eval_(acks.enqueue1(()))
     case Heartbeat(d) =>
       Stream.eval_(putStrLn[IO](s"Heartbeat received: $d"))
     case InvalidSession(resumable) =>
-      Stream.eval_(putStrLn[IO](s"Invalid session received: $resumable"))
-    case Dispatch(_, event @ Ready(_, _, id)) =>
-      Stream.eval_(putStrLn[IO](s"Ready received: $id")) ++ Stream.eval_(sessionId.set(id.some)) ++ Stream.emit(event)
+      Stream.eval_(if (resumable) IO.unit else sessionId.set(none)) ++ Stream.sleep_(5.seconds) ++ Stream.raiseError[IO](SessionInvalid(resumable))
     case Dispatch(nextSequenceNumber, event) =>
-      Stream.eval_(sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(event)
+      (event match {
+        case Ready(_, _, id) => Stream.eval_(sessionId.set(id.some))
+        case _               => Stream.empty
+      }) ++ Stream.eval_(sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(event)
   }
 
   def identifyOrResume(sessionId: SessionId, sequenceNumber: SequenceNumber): IO[Text] = sessionId.get.flatMap {
@@ -119,33 +116,23 @@ object Main extends IOApp with CirceEntityDecoder {
 
   // This is basically what I imagine the user has to implement to use this framework, except with a Discord wrapper around client
   def handleEvent(client: Client[IO])(event: DispatchEvent): IO[Unit] = event match {
-    case Ready(_, _, _) =>
-      putStrLn[IO]("Ready received")
-    case GuildCreate(_) =>
-      putStrLn[IO]("Guild create received")
     case MessageCreate(message) =>
       if (message.content == "ping")
         client.expect[Json](POST(Json.obj("content" -> "pong".asJson), apiUri.addPath(s"channels/${message.channelId}/messages"), headers)).void
       else IO.unit
-    case TypingStart(_) =>
-      putStrLn[IO]("Typing start received")
-    case ReactionAdd(_) =>
-      putStrLn[IO]("Reaction add received")
-    case PresenceUpdate(_) =>
-      putStrLn[IO]("Presence update received")
-    case Resumed(_) =>
-      putStrLn[IO]("Resumed received")
+    case other =>
+      putStrLn[IO](s"Some other message type received: $other")
   }
 
   val token =
-    "Njc5NzY4MTU0NjcwNDk3OTA1.XoZxFQ.P7RvsHEtMt_k2HFjCLbcWwTe13U"
+    "Njc5NzY4MTU0NjcwNDk3OTA1.XovNvQ.KxgjJQPi0ow4L48dhioGKPqfL4E"
 
-  def heartbeat(interval: FiniteDuration, connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: AckSignal2): Stream[IO, Unit] = {
-    val sendHeartbeat = putStrLn[IO]("Sending heartbeat") >> makeHeartbeat(sequenceNumber).flatMap(connection.send)
+  def heartbeat(interval: FiniteDuration, connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: Acks): Stream[IO, Unit] = {
+    val sendHeartbeat = makeHeartbeat(sequenceNumber).flatMap(connection.send)
     val heartbeats    = Stream.eval(sendHeartbeat) ++ Stream.repeatEval(sendHeartbeat).metered(interval)
 
     // TODO: Something besides true, false
-    (heartbeats.as(true) merge acks.discrete.as(false)).sliding(2).map(_.toList).flatMap {
+    (heartbeats.as(true) merge acks.dequeue.as(false)).sliding(2).map(_.toList).flatMap {
       case List(true, true) => Stream.raiseError[IO](NoHeartbeatAck)
       case _                => Stream.emit(())
     }
@@ -166,9 +153,7 @@ object Main extends IOApp with CirceEntityDecoder {
   // TODO: Make these wrappers around these types for easier usage
   type SequenceNumber = Ref[IO, Option[Int]]
   type SessionId      = Ref[IO, Option[String]]
-  // TODO: Should these be Signals or Queues?
-  type AckSignal  = SignallingRef[IO, Unit]
-  type AckSignal2 = Signal[IO, Unit]
+  type Acks           = Queue[IO, Unit]
 
   case class ConnectionClosedWithError(statusCode: Int, reason: String) extends NoStackTrace
   case class SessionInvalid(resumable: Boolean)                         extends NoStackTrace
