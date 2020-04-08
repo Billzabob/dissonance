@@ -5,11 +5,11 @@ import cats.implicits._
 import scala.concurrent.duration._
 
 object utils {
-  def putStrLn[F[_]: Sync](s: String): F[Unit] = Sync[F].delay(println(s))
+  def putStrLn(s: String): IO[Unit] = IO(println(s))
 
-  def fakeResource[F[_]: Sync: Timer](i: Int, duration: FiniteDuration) =
+  def fakeResource(i: Int, duration: FiniteDuration)(implicit T: Timer[IO]) =
     Resource.make {
-      putStrLn[F](s"Acquiring Resource $i...") >> Timer[F].sleep(duration) >> putStrLn[F](s"Acquired Resource $i")
-    } { _ => putStrLn[F](s"Releasing Resource $i...") >> Timer[F].sleep(duration) >> putStrLn[F](s"Released Resource $i") }
+      putStrLn(s"Acquiring Resource $i...") >> IO.sleep(duration) >> putStrLn(s"Acquired Resource $i")
+    } { _ => putStrLn(s"Releasing Resource $i...") >> IO.sleep(duration) >> putStrLn(s"Released Resource $i") }
 
 }

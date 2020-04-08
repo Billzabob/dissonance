@@ -83,7 +83,7 @@ class Discord(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: T
       .rethrow
       .map(event => handleEvents(event, sequenceNumber, acks, sessionId, connection))
       .parJoinUnbounded
-      .handleErrorWith(e => Stream.eval_(putStrLn[IO](e.toString)))
+      .handleErrorWith(e => Stream.eval_(putStrLn(e.toString)))
       .interruptWhen(connection.closeFrame.get.map(handleConnectionClose))
   }
 
@@ -99,7 +99,7 @@ class Discord(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: T
     case HeartBeatAck =>
       Stream.eval_(acks.enqueue1(()))
     case Heartbeat(d) =>
-      Stream.eval_(putStrLn[IO](s"Heartbeat received: $d"))
+      Stream.eval_(putStrLn(s"Heartbeat received: $d"))
     case Reconnect =>
       Stream.raiseError[IO](ReconnectReceived)
     case InvalidSession(resumable) =>

@@ -11,7 +11,7 @@ object Main extends IOApp {
   def handleEvent(client: DiscordClient, event: DispatchEvent): IO[Unit] = event match {
     case DispatchEvent.MessageCreate(message) =>
       if (message.content == "ping")
-        client.sendMessage(Message(message.channelId, "pong"))
+        client.sendMessage("pong", message.channelId).void
       else IO.unit
     case _ =>
       IO.unit
