@@ -4,6 +4,8 @@ import cats.effect._
 import cats.effect.concurrent._
 import cats.implicits._
 import discord.model._
+import discord.model.DispatchEvent._
+import discord.model.Event._
 import discord.utils._
 import fs2.concurrent.Queue
 import fs2.Stream
@@ -91,11 +93,13 @@ object Main extends IOApp with CirceEntityDecoder {
       Stream.eval_(acks.enqueue1(()))
     case Heartbeat(d) =>
       Stream.eval_(putStrLn[IO](s"Heartbeat received: $d"))
+    case Reconnect =>
+      Stream.raiseError[IO](ReconnectReceived)
     case InvalidSession(resumable) =>
       Stream.eval_(if (resumable) IO.unit else sessionId.set(none)) ++ Stream.sleep_(5.seconds) ++ Stream.raiseError[IO](SessionInvalid(resumable))
     case Dispatch(nextSequenceNumber, event) =>
       (event match {
-        case Ready(_, _, id) => Stream.eval_(sessionId.set(id.some))
+        case Ready(_, _, id, _) => Stream.eval_(sessionId.set(id.some))
         case _               => Stream.empty
       }) ++ Stream.eval_(sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(event)
   }
@@ -120,12 +124,12 @@ object Main extends IOApp with CirceEntityDecoder {
       if (message.content == "ping")
         client.expect[Json](POST(Json.obj("content" -> "pong".asJson), apiUri.addPath(s"channels/${message.channelId}/messages"), headers)).void
       else IO.unit
-    case other =>
-      putStrLn[IO](s"Some other message type received: $other")
+    case _ =>
+      IO.unit
   }
 
   val token =
-    "Njc5NzY4MTU0NjcwNDk3OTA1.XovNvQ.KxgjJQPi0ow4L48dhioGKPqfL4E"
+    "Njc5NzY4MTU0NjcwNDk3OTA1.Xovt5w.GI4dnRdi5UnLG7AfAO6QYoZmQLs"
 
   def heartbeat(interval: FiniteDuration, connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: Acks): Stream[IO, Unit] = {
     val sendHeartbeat = makeHeartbeat(sequenceNumber).flatMap(connection.send)
@@ -133,7 +137,7 @@ object Main extends IOApp with CirceEntityDecoder {
 
     // TODO: Something besides true, false
     (heartbeats.as(true) merge acks.dequeue.as(false)).sliding(2).map(_.toList).flatMap {
-      case List(true, true) => Stream.raiseError[IO](NoHeartbeatAck)
+      case List(true, true) => Stream.raiseError[IO](NoHeartbeatAck) // TODO: Terminate connection with non-1000 error code
       case _                => Stream.emit(())
     }
   }
@@ -158,4 +162,5 @@ object Main extends IOApp with CirceEntityDecoder {
   case class ConnectionClosedWithError(statusCode: Int, reason: String) extends NoStackTrace
   case class SessionInvalid(resumable: Boolean)                         extends NoStackTrace
   case object NoHeartbeatAck                                            extends NoStackTrace
+  case object ReconnectReceived                                         extends NoStackTrace
 }
