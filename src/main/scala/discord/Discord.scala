@@ -3,6 +3,7 @@ package discord
 import cats.effect._
 import cats.effect.concurrent._
 import cats.implicits._
+import discord.Discord._
 import discord.model._
 import discord.model.DispatchEvent._
 import discord.model.Errors._
@@ -13,7 +14,7 @@ import fs2.Stream
 import io.circe.parser._
 import io.circe.syntax._
 import java.net.http.HttpClient
-import org.http4s._
+import org.http4s.{headers => _, _}
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.client.Client
 import org.http4s.client.dsl.io._
@@ -47,11 +48,9 @@ class Discord(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: T
     }
   }
 
-  private val apiUri = uri"https://discordapp.com/api"
-
   private def getUri(client: Client[IO]): IO[Uri] =
     client
-      .expect[GetGatewayResponse](GET(apiUri.addPath("gateway/bot"), headers))
+      .expect[GetGatewayResponse](GET(apiEndpoint.addPath("gateway/bot"), headers(token)))
       .map(_.url)
       .map(Uri.fromString)
       .rethrow
@@ -65,9 +64,8 @@ class Discord(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: T
       sessionId: SessionId
   ): Stream[IO, DispatchEvent] =
     Stream
-      .resource(wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers))))
+      .resource(wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers(token)))))
       .flatMap(connection => events(connection, sequenceNumber, acks, sessionId))
-      .handleErrorWith(e => Stream.eval_(putStrLn[IO](e.toString)))
       .repeat
 
   private def events(
@@ -85,6 +83,7 @@ class Discord(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: T
       .rethrow
       .map(event => handleEvents(event, sequenceNumber, acks, sessionId, connection))
       .parJoinUnbounded
+      .handleErrorWith(e => Stream.eval_(putStrLn[IO](e.toString)))
       .interruptWhen(connection.closeFrame.get.map(handleConnectionClose))
   }
 
@@ -146,11 +145,11 @@ class Discord(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: T
 
   private def resumeMessage(sessionId: String, sequenceNumber: Option[Int]) =
     Text(s"""{"op":6,"d":{"token":"$token","session_id":"$sessionId","seq":"$sequenceNumber"}}""")
-
-  private def headers =
-    Authorization(Credentials.Token("Bot".ci, token))
 }
 
 object Discord {
   def apply(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: Timer[IO]): Discord = new Discord(token)
+
+  val apiEndpoint            = uri"https://discordapp.com/api"
+  def headers(token: String) = Authorization(Credentials.Token("Bot".ci, token))
 }
