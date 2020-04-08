@@ -10,9 +10,10 @@ object Main extends IOApp {
 
   def handleEvent(client: DiscordClient, event: DispatchEvent): IO[Unit] = event match {
     case DispatchEvent.MessageCreate(message) =>
-      if (message.content == "ping")
-        client.sendMessage("pong", message.channelId).void
-      else IO.unit
+      if (message.content == "ping") {
+        val embed = Embed.make.withTitle("My Title").withDescription("My Description")
+        client.sendEmbed(embed, message.channelId).void
+      } else IO.unit
     case _ =>
       IO.unit
   }

@@ -80,7 +80,11 @@ class Discord(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: T
         case Text(data, _) => data
       }
       .map(decode[Event])
-      .rethrow
+      .flatMap {
+        case Right(a) => Stream.emit(a)
+        case Left(b) => Stream.eval_(putStrLn(b.toString))
+      }
+      // .rethrow // TODO: rethrow instead of flatmap eventually
       .map(event => handleEvents(event, sequenceNumber, acks, sessionId, connection))
       .parJoinUnbounded
       .handleErrorWith(e => Stream.eval_(putStrLn(e.toString)))
