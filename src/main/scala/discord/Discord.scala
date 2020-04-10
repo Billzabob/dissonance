@@ -10,10 +10,9 @@ import discord.model.Errors._
 import discord.model.Event._
 import discord.utils._
 import fs2.concurrent.Queue
-import fs2.Stream
+import fs2.{Pipe, Stream}
 import io.circe.parser._
 import io.circe.syntax._
-import java.net.http.HttpClient
 import org.http4s.{headers => _, _}
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.client.Client
@@ -25,28 +24,22 @@ import org.http4s.implicits._
 import org.http4s.Method._
 import scala.concurrent.duration._
 
-class Discord(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: Timer[IO]) {
+class Discord(token: String, client: Client[IO], wsClient: WSClient[IO])(implicit concurrent: ConcurrentEffect[IO], timer: Timer[IO]) {
 
-  type EventHandler   = (DiscordClient, DispatchEvent) => IO[Unit]
+  type EventHandler   = DiscordClient => Pipe[IO, DispatchEvent, Unit]
   type SequenceNumber = Ref[IO, Option[Int]]
   type SessionId      = Ref[IO, Option[String]]
   type Acks           = Queue[IO, Unit]
 
-  def start(eventHandler: EventHandler): IO[Unit] = {
-    val clients = IO(HttpClient.newHttpClient).map(client => (JdkHttpClient[IO](client), JdkWSClient[IO](client)))
-
-    clients.flatMap {
-      case (client, wsClient) =>
-        for {
-          uri            <- getUri(client)
-          sequenceNumber <- Ref[IO].of(none[Int])
-          sessionId      <- Ref[IO].of(none[String])
-          acks           <- Queue.unbounded[IO, Unit]
-          discordClient  = new DiscordClient(client, token)
-          _              <- processEvents(uri, wsClient, sequenceNumber, acks, sessionId).evalMap(event => eventHandler(discordClient, event)).compile.drain
-        } yield ()
-    }
-  }
+  def start(eventHandler: EventHandler): IO[Unit] =
+    for {
+      uri            <- getUri(client)
+      sequenceNumber <- Ref[IO].of(none[Int])
+      sessionId      <- Ref[IO].of(none[String])
+      acks           <- Queue.unbounded[IO, Unit]
+      discordClient  = new DiscordClient(client, token)
+      _              <- processEvents(uri, wsClient, sequenceNumber, acks, sessionId).through(eventHandler(discordClient)).compile.drain
+    } yield ()
 
   private def getUri(client: Client[IO]): IO[Uri] =
     client
@@ -82,13 +75,13 @@ class Discord(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: T
       .map(decode[Event])
       .flatMap {
         case Right(a) => Stream.emit(a)
-        case Left(b) => Stream.eval_(putStrLn(b.toString))
+        case Left(b)  => Stream.eval_(putStrLn(b.toString))
       }
       // .rethrow // TODO: rethrow instead of flatmap eventually
       .map(event => handleEvents(event, sequenceNumber, acks, sessionId, connection))
       .parJoinUnbounded
-      .handleErrorWith(e => Stream.eval_(putStrLn(e.toString)))
       .interruptWhen(connection.closeFrame.get.map(handleConnectionClose))
+      .handleErrorWith(e => Stream.eval_(putStrLn(e.toString)))
   }
 
   private def handleEvents(
@@ -145,14 +138,14 @@ class Discord(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: T
     sequenceNumber.get.map(Heartbeat.apply).map(heartbeat => Text(heartbeat.asJson.noSpaces))
 
   private def identityMessage =
-    Text(s"""{"op":2,"d":{"token":"$token","properties":{"$$os":"","$$browser":"","$$device":""}}}""")
+    Text(s"""{"op":2,"d":{"token":"$token","intents":512,"properties":{"$$os":"","$$browser":"","$$device":""}}}""")
 
   private def resumeMessage(sessionId: String, sequenceNumber: Option[Int]) =
     Text(s"""{"op":6,"d":{"token":"$token","session_id":"$sessionId","seq":"$sequenceNumber"}}""")
 }
 
 object Discord {
-  def apply(token: String)(implicit concurrent: ConcurrentEffect[IO], timer: Timer[IO]): Discord = new Discord(token)
+  def apply(token: String, client: Client[IO], wsClient: WSClient[IO])(implicit concurrent: ConcurrentEffect[IO], timer: Timer[IO]): Discord = new Discord(token, client, wsClient)
 
   val apiEndpoint            = uri"https://discordapp.com/api"
   def headers(token: String) = Authorization(Credentials.Token("Bot".ci, token))

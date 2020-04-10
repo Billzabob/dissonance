@@ -10,7 +10,8 @@ import org.http4s.client.Client
 import org.http4s.client.dsl.io._
 import org.http4s.Method._
 
-class DiscordClient(client: Client[IO], token: String) {
+// TODO: Let user use the underlying client manually if they want
+class DiscordClient(val client: Client[IO], token: String) {
 
   def sendMessage(message: String, channelId: String, tts: Boolean = false): IO[Message] =
     client
