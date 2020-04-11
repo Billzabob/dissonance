@@ -1,14 +1,12 @@
 package discord
 
-import App.ConnectionPool
 import cats.effect._
 import cats.effect._
 import cats.implicits._
+import discord.DB._
 import discord.model._
 import java.net.http.HttpClient
-import natchez.Trace.Implicits.noop
 import org.http4s.client.jdkhttpclient._
-import skunk._
 import fs2.Pipe
 
 object Main extends IOApp {
@@ -24,20 +22,11 @@ object Main extends IOApp {
       .as(ExitCode.Success)
 
   def handleEvents(pool: ConnectionPool, wz: Warzone)(client: DiscordClient): Pipe[IO, DispatchEvent, Unit] = stream => {
-    val app = new App(client, pool, wz)
+    val db  = new DB(pool)
+    val app = new App(client, db, wz)
     stream.evalMap(app.handleEvent)
   }
 
   val clients =
     IO(HttpClient.newHttpClient).map(client => (JdkHttpClient[IO](client), JdkWSClient[IO](client)))
-
-  val pool: Resource[IO, Resource[IO, Session[IO]]] =
-    Session.pooled(
-      host = "localhost",
-      port = 5432,
-      user = "nhallstrom",
-      database = "public",
-      password = None,
-      max = 10
-    )
 }
