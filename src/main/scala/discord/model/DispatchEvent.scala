@@ -28,6 +28,8 @@ object DispatchEvent {
 
   def ImplementMe(name: String) = DecodingFailure(s"UNIMPLEMENTED: $name", Nil).asLeft
 
+  // TODO: Finish implementing all the events:
+  // https://discordapp.com/developers/docs/topics/gateway#commands-and-events-gateway-events
   def decodeEventName(eventName: String, data: ACursor): Decoder.Result[DispatchEvent] = eventName match {
     case "READY" =>
       data.as[Ready]
