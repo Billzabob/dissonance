@@ -10,7 +10,7 @@ import discord.model.Errors._
 import discord.model.Event._
 import discord.utils._
 import fs2.concurrent.Queue
-import fs2.{Pipe, Stream}
+import fs2.Stream
 import io.circe.parser._
 import io.circe.syntax._
 import org.http4s.{headers => _, _}
@@ -26,7 +26,7 @@ import scala.concurrent.duration._
 
 class Discord(token: String, client: Client[IO], wsClient: WSClient[IO])(implicit concurrent: ConcurrentEffect[IO], timer: Timer[IO]) {
 
-  type EventHandler   = DiscordClient => Pipe[IO, DispatchEvent, Unit]
+  type EventHandler   = DispatchEvent => IO[Unit]
   type SequenceNumber = Ref[IO, Option[Int]]
   type SessionId      = Ref[IO, Option[String]]
   type Acks           = Queue[IO, Unit]
@@ -37,8 +37,7 @@ class Discord(token: String, client: Client[IO], wsClient: WSClient[IO])(implici
       sequenceNumber <- Ref[IO].of(none[Int])
       sessionId      <- Ref[IO].of(none[String])
       acks           <- Queue.unbounded[IO, Unit]
-      discordClient  = new DiscordClient(client, token)
-      _              <- processEvents(uri, wsClient, sequenceNumber, acks, sessionId).through(eventHandler(discordClient)).compile.drain
+      _              <- processEvents(uri, wsClient, sequenceNumber, acks, sessionId).evalMap(eventHandler).compile.drain
     } yield ()
 
   private def getUri(client: Client[IO]): IO[Uri] =

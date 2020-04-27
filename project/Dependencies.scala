@@ -12,10 +12,10 @@ object Dependencies {
     val http4s          = "0.21.3"
     val newtype         = "0.4.3"
     val decline         = "1.0.0"
-    val refined         = "0.9.13"
+    val refined         = "0.9.14"
     val circeFs2        = "0.13.0"
     val scalaTest       = "3.1.1"
-    val catsEffect      = "2.1.2"
+    val catsEffect      = "2.1.3"
     val enumeratumCirce = "1.5.23"
     val websocketClient = "0.3.0"
   }
