@@ -175,27 +175,27 @@ object DispatchEvent {
       Resumed.asRight
     // TODO: We lose context here. CHANNEL_CREATE, CHANNEL_UPDATE, and CHANNEL_DELETE provide a
     // TODO: Channel object but we don't know if it was created or updated or deleted anymore
-    case n @ "CHANNEL_CREATE" =>
+    case "CHANNEL_CREATE" =>
       data.as[Channel]
-    case n @ "CHANNEL_UPDATE" =>
+    case "CHANNEL_UPDATE" =>
       data.as[Channel]
-    case n @ "CHANNEL_DELETE" =>
+    case "CHANNEL_DELETE" =>
       data.as[Channel]
-    case n @ "CHANNEL_PINS_UPDATE" =>
+    case "CHANNEL_PINS_UPDATE" =>
       data.as[ChannelPinsUpdate]
     case "GUILD_CREATE" =>
       data.as[Guild]
-    case n @ "GUILD_UPDATE" =>
+    case "GUILD_UPDATE" =>
       data.as[Guild]
     case n @ "GUILD_DELETE" =>
       ImplementMe(n)
-    case n @ "GUILD_BAN_ADD" =>
+    case "GUILD_BAN_ADD" =>
       data.as[GuildBan]
-    case n @ "GUILD_BAN_REMOVE" =>
+    case "GUILD_BAN_REMOVE" =>
       data.as[GuildBan]
-    case n @ "GUILD_EMOJIS_UPDATE" =>
+    case "GUILD_EMOJIS_UPDATE" =>
       data.as[GuildEmojis]
-    case n @ "GUILD_INTEGRATIONS_UPDATE" =>
+    case "GUILD_INTEGRATIONS_UPDATE" =>
       data.as[GuildId]
     case n @ "GUILD_MEMBER_ADD" =>
       ImplementMe(n)
