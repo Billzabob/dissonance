@@ -9,7 +9,6 @@ import java.time.Instant
 import org.http4s.circe._
 import org.http4s.Uri
 
-
 case class Embed(
     title: Option[String],
     `type`: Option[EmbedType],
