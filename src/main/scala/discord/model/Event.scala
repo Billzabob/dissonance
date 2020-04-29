@@ -27,10 +27,10 @@ object Event {
 
   implicit val dispatchDecoder: Decoder[Dispatch] = cursor =>
     for {
-      eventName <- cursor.get[String]("t") // TODO: How to use decodeAccumulating?
-      s         <- cursor.get[Int]("s")
-      result    <- DispatchEvent.decodeEventName(eventName, cursor.downField("d")).map(Dispatch(s, _))
-    } yield result
+      eventName      <- cursor.get[String]("t") // TODO: How to use decodeAccumulating?
+      sequenceNumber <- cursor.get[Int]("s")
+      event          <- DispatchEvent.decodeEventName(eventName, cursor.downField("d"))
+    } yield Dispatch(sequenceNumber, event)
 
   implicit val eventDecoder: Decoder[Event] = cursor =>
     for {

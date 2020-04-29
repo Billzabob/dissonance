@@ -23,75 +23,75 @@ object DispatchEvent {
   case class TypingStart(json: Json)         extends DispatchEvent
 
   // TODO: Better typing
-  type Snowflake = Long
-  type Role = Unit
-  type Emoji = Unit
+  type Snowflake    = Long
+  type Role         = Unit
+  type Emoji        = Unit
   type GuildFeature = String
-  type Timestamp = String
-  type VoiceState = Unit
-  type GuildMember = Unit
-  type Channel = Unit
-  type Activity = Unit
+  type Timestamp    = String
+  type VoiceState   = Unit
+  type GuildMember  = Unit
+  type Channel      = Unit
+  type Activity     = Unit
   type ClientStatus = Unit
 
   case class PresenceUpdate(
-    user: User,
-    roles: List[Snowflake],
-    game: Option[Activity],
-    guildId: Snowflake,
-    status: String,
-    activities: List[Activity],
-    clientStatus: ClientStatus,
-    premiumSince: Option[Timestamp],
-    nick: Option[String]
+      user: User,
+      roles: List[Snowflake],
+      game: Option[Activity],
+      guildId: Snowflake,
+      status: String,
+      activities: List[Activity],
+      clientStatus: ClientStatus,
+      premiumSince: Option[Timestamp],
+      nick: Option[String]
   ) extends DispatchEvent
 
   case class Guild(
-    id: Snowflake,
-    name: String,
-    icon: Option[String],
-    splash: Option[String],
-    discoverySplash: Option[String],
-    owner: Boolean,
-    ownerId: Snowflake,
-    permissions: Int,
-    region: String,
-    afkChannelId: Option[Snowflake],
-    afkTimeout: Integer,
-    embedEnabled: Boolean,
-    embedChannelId: Option[Snowflake],
-    verificationLevel: Int,
-    defaultMessageNotifications: Int,
-    explicitContentFilter: Int,
-    roles: List[Role],
-    emojis: List[Emoji],
-    features: List[GuildFeature],
-    mfaLevel: Int,
-    applicationId: Option[Snowflake],
-    widgetEnabled: Boolean,
-    widgetChannelId: Option[Snowflake],
-    systemChannelId: Option[Snowflake],
-    systemChannelFlags: Int,
-    rulesChannelId: Option[Snowflake],
-    joinedAt: Timestamp,
-    large: Boolean,
-    unavailable: Boolean,
-    memberCount: Int,
-    voiceStates: List[VoiceState],
-    members: List[GuildMember],
-    channels: List[Channel],
-    presences: List[PresenceUpdate],
-    maxPresences: Option[Int],
-    maxMembers: Int,
-    vanityUrlCode: Option[String],
-    description: Option[String],
-    banner: Option[String],
-    premiumTier: Int,
-    premiumSubscriptionCount: Integer,
-    preferredLocal: String,
-    publicUpdatesChannelId: Option[Snowflake],
-    approximateMemberCount: Int,
-    approximatePresenceCount: Int
+      id: Snowflake,
+      name: String,
+      icon: Option[String],
+      splash: Option[String],
+      discoverySplash: Option[String],
+      owner: Boolean,
+      ownerId: Snowflake,
+      permissions: Int,
+      region: String,
+      afkChannelId: Option[Snowflake],
+      afkTimeout: Integer,
+      embedEnabled: Boolean,
+      embedChannelId: Option[Snowflake],
+      verificationLevel: Int,
+      defaultMessageNotifications: Int,
+      explicitContentFilter: Int,
+      roles: List[Role],
+      emojis: List[Emoji],
+      features: List[GuildFeature],
+      mfaLevel: Int,
+      applicationId: Option[Snowflake],
+      widgetEnabled: Boolean,
+      widgetChannelId: Option[Snowflake],
+      systemChannelId: Option[Snowflake],
+      systemChannelFlags: Int,
+      rulesChannelId: Option[Snowflake],
+      joinedAt: Timestamp,
+      large: Boolean,
+      unavailable: Boolean,
+      memberCount: Int,
+      voiceStates: List[VoiceState],
+      members: List[GuildMember],
+      channels: List[Channel],
+      presences: List[PresenceUpdate],
+      maxPresences: Option[Int],
+      maxMembers: Int,
+      vanityUrlCode: Option[String],
+      description: Option[String],
+      banner: Option[String],
+      premiumTier: Int,
+      premiumSubscriptionCount: Integer,
+      preferredLocal: String,
+      publicUpdatesChannelId: Option[Snowflake],
+      approximateMemberCount: Int,
+      approximatePresenceCount: Int
   ) extends DispatchEvent
 
   case class GuildBan(guildId: Snowflake, user: User) extends DispatchEvent
@@ -102,12 +102,12 @@ object DispatchEvent {
 
   implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
 
-  implicit val readyDecoder: Decoder[Ready] = deriveConfiguredDecoder
+  implicit val readyDecoder: Decoder[Ready]                   = deriveConfiguredDecoder
   implicit val presenceUpdateDecoder: Decoder[PresenceUpdate] = deriveConfiguredDecoder
-  implicit val guildDecoder: Decoder[Guild] = deriveConfiguredDecoder
-  implicit val guildBanDecoder: Decoder[GuildBan] = deriveConfiguredDecoder
-  implicit val guildEmojisDecoder: Decoder[GuildEmojis] = deriveConfiguredDecoder
-  implicit val guildIdDecoder: Decoder[GuildId] = deriveConfiguredDecoder
+  implicit val guildDecoder: Decoder[Guild]                   = deriveConfiguredDecoder
+  implicit val guildBanDecoder: Decoder[GuildBan]             = deriveConfiguredDecoder
+  implicit val guildEmojisDecoder: Decoder[GuildEmojis]       = deriveConfiguredDecoder
+  implicit val guildIdDecoder: Decoder[GuildId]               = deriveConfiguredDecoder
 
   def ImplementMe(name: String) = DecodingFailure(s"UNIMPLEMENTED: $name", Nil).asLeft
 
