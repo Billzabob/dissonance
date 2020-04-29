@@ -4,6 +4,7 @@ import cats.implicits._
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
+import discord.model.user._
 
 // TODO: This sealed trait is going to have a TON of members that all need to be in this file, making it huge.
 // TODO: Is there a better way?
