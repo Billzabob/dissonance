@@ -152,7 +152,7 @@ object DispatchEvent {
 
   case class Ready(
       v: Integer,
-      user: Json,
+      user: User,
       sessionId: String,
       shard: Option[(Int, Int)]
   ) extends DispatchEvent
