@@ -33,14 +33,14 @@ class Discord(token: String, client: Client[IO], wsClient: WSClient[IO])(implici
 
   def start(eventHandler: EventHandler): IO[Unit] =
     for {
-      uri            <- getUri(client)
+      uri            <- getUri
       sequenceNumber <- Ref[IO].of(none[Int])
       sessionId      <- Ref[IO].of(none[String])
       acks           <- Queue.unbounded[IO, Unit]
-      _              <- processEvents(uri, wsClient, sequenceNumber, acks, sessionId).evalMap(eventHandler).compile.drain
+      _              <- processEvents(uri, sequenceNumber, acks, sessionId).evalMap(eventHandler).compile.drain
     } yield ()
 
-  private def getUri(client: Client[IO]): IO[Uri] =
+  private def getUri: IO[Uri] =
     client
       .expect[GetGatewayResponse](GET(apiEndpoint.addPath("gateway/bot"), headers(token)))
       .map(_.url)
@@ -50,7 +50,6 @@ class Discord(token: String, client: Client[IO], wsClient: WSClient[IO])(implici
 
   private def processEvents(
       uri: Uri,
-      wsClient: WSClient[IO],
       sequenceNumber: SequenceNumber,
       acks: Acks,
       sessionId: SessionId
