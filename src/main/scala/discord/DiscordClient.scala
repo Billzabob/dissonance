@@ -2,7 +2,8 @@ package discord
 
 import cats.effect._
 import discord.Discord._
-import discord.model.{Embed, Message}
+import discord.model.embed.Embed
+import discord.model.Message
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.circe.CirceEntityCodec._
