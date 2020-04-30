@@ -6,6 +6,8 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import discord.model.user._
 import java.time.Instant
+import org.http4s.circe._
+import org.http4s.Uri
 
 // TODO: This sealed trait is going to have a TON of members that all need to be in this file, making it huge.
 // TODO: Is there a better way?
@@ -16,16 +18,78 @@ object DispatchEvent {
   implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
 
   // TODO: Implement these types
-  type Activity     = Unit
-  type ChannelType  = Unit
-  type ClientStatus = Unit
-  type Emoji        = Unit
-  type GuildFeature = String
-  type GuildMember  = Unit
-  type Overwrite    = Unit
-  type Role         = Unit
-  type Snowflake    = Long
-  type VoiceState   = Unit
+  type ActivityFlags = Unit
+  type Assets        = Unit
+  type ChannelType   = Unit
+  type ClientStatus  = Unit
+  type GuildFeature  = String
+  type GuildMember   = Unit
+  type Overwrite     = Unit
+  type Party         = Unit
+  type Role          = Unit
+  type Secrets       = Unit
+  type Snowflake     = Long
+  type VoiceState    = Unit
+
+  // TODO: Move case classes that don't extend DispatchEvent out of here since this file is already gonna be huge
+  case class Activity(
+      name: String,
+      `type`: ActivityType,
+      url: Option[Uri],
+      createdAt: Timestamp,
+      timestamps: Timestamps,
+      applicationId: Snowflake,
+      details: Option[String],
+      state: Option[String],
+      emoji: Option[Emoji],
+      party: Party,
+      assets: Assets,
+      secrets: Secrets,
+      instance: Boolean,
+      flags: ActivityFlags
+  )
+
+  object Activity {
+    implicit val activityDecoder: Decoder[Activity] = deriveConfiguredDecoder
+  }
+
+  sealed trait ActivityType extends Product with Serializable
+
+  object ActivityType {
+    case object Game      extends ActivityType
+    case object Streaming extends ActivityType
+    case object Listening extends ActivityType
+    case object Custom    extends ActivityType
+
+    implicit val activityTypeDecoder: Decoder[ActivityType] = Decoder[Int].emap {
+      case 0     => Right(Game)
+      case 1     => Right(Streaming)
+      case 2     => Right(Listening)
+      case 4     => Right(Custom)
+      case other => Left(s"Unknown activity type ID: $other")
+    }
+  }
+
+  case class Timestamps(start: Timestamp, end: Timestamp)
+
+  object Timestamps {
+    implicit val timestampsDecoder: Decoder[Timestamps] = deriveConfiguredDecoder
+  }
+
+  case class Timestamp(time: Instant)
+
+  object Timestamp {
+    // Decodes either an ISO8601 timestamp string or a unix epoch number, since Discord uses both in different places
+    // Note: If we need to have an Encoder this won't work since we won't know whether to turn this into a timestamp or an epoch number
+    implicit val timestampDecoder: Decoder[Timestamp] =
+      (Decoder[Instant] or Decoder[Long].map(Instant.ofEpochMilli)).map(Timestamp.apply)
+  }
+
+  case class Emoji(name: String, id: Snowflake, animated: Boolean)
+
+  object Emoji {
+    implicit val emojiDecoder: Decoder[Emoji] = deriveConfiguredDecoder
+  }
 
   case class Channel(
       id: Snowflake,
@@ -45,14 +109,14 @@ object DispatchEvent {
       ownerId: Snowflake,
       applicationId: Snowflake,
       parentId: Option[Snowflake],
-      lastPinTimestamp: Instant
+      lastPinTimestamp: Timestamp
   ) extends DispatchEvent
 
   object Channel {
     implicit val channelDecoder: Decoder[Channel] = deriveConfiguredDecoder
   }
 
-  case class ChannelPinsUpdate(guildId: Snowflake, channelId: Snowflake, lastPinTimestamp: Instant) extends DispatchEvent
+  case class ChannelPinsUpdate(guildId: Snowflake, channelId: Snowflake, lastPinTimestamp: Timestamp) extends DispatchEvent
 
   object ChannelPinsUpdate {
     implicit val channelPinsUpdateDecoder: Decoder[ChannelPinsUpdate] = deriveConfiguredDecoder
@@ -85,7 +149,7 @@ object DispatchEvent {
       systemChannelId: Option[Snowflake],
       systemChannelFlags: Int,
       rulesChannelId: Option[Snowflake],
-      joinedAt: Instant,
+      joinedAt: Timestamp,
       large: Boolean,
       unavailable: Boolean,
       memberCount: Int,
@@ -140,7 +204,7 @@ object DispatchEvent {
       status: String,
       activities: List[Activity],
       clientStatus: ClientStatus,
-      premiumSince: Option[Instant],
+      premiumSince: Option[Timestamp],
       nick: Option[String]
   ) extends DispatchEvent
 
@@ -189,6 +253,7 @@ object DispatchEvent {
     case "GUILD_UPDATE" =>
       data.as[Guild]
     case n @ "GUILD_DELETE" =>
+      // Not sure on this one, since the docs give an example but no schema
       ImplementMe(n)
     case "GUILD_BAN_ADD" =>
       data.as[GuildBan]
