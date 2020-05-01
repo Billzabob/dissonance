@@ -24,14 +24,16 @@ import org.http4s.implicits._
 import org.http4s.Method._
 import scala.concurrent.duration._
 
-class Discord(token: String, client: Client[IO], wsClient: WSClient[IO])(implicit concurrent: ConcurrentEffect[IO], timer: Timer[IO]) {
+class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(implicit cs: ContextShift[IO], t: Timer[IO]) {
+
+  val client = new DiscordClient(token, httpClient)
 
   type EventHandler   = DispatchEvent => IO[Unit]
   type SequenceNumber = Ref[IO, Option[Int]]
   type SessionId      = Ref[IO, Option[String]]
   type Acks           = Queue[IO, Unit]
 
-  def start(eventHandler: EventHandler): IO[Unit] =
+  def subscribe(eventHandler: EventHandler): IO[Unit] =
     for {
       uri            <- getUri
       sequenceNumber <- Ref[IO].of(none[Int])
@@ -41,7 +43,7 @@ class Discord(token: String, client: Client[IO], wsClient: WSClient[IO])(implici
     } yield ()
 
   private def getUri: IO[Uri] =
-    client
+    httpClient
       .expect[GetGatewayResponse](GET(apiEndpoint.addPath("gateway/bot"), headers(token)))
       .map(_.url)
       .map(Uri.fromString)
@@ -143,7 +145,8 @@ class Discord(token: String, client: Client[IO], wsClient: WSClient[IO])(implici
 }
 
 object Discord {
-  def apply(token: String, client: Client[IO], wsClient: WSClient[IO])(implicit concurrent: ConcurrentEffect[IO], timer: Timer[IO]): Discord = new Discord(token, client, wsClient)
+  def make(token: String)(implicit cs: ContextShift[IO], t: Timer[IO]): Resource[IO, Discord] =
+    Resource.liftF(utils.javaClient.map(javaClient => new Discord(token, JdkHttpClient[IO](javaClient), JdkWSClient[IO](javaClient))))
 
   val apiEndpoint            = uri"https://discordapp.com/api"
   def headers(token: String) = Authorization(Credentials.Token("Bot".ci, token))

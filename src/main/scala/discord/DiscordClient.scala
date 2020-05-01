@@ -9,9 +9,10 @@ import io.circe.syntax._
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.client.Client
 import org.http4s.client.dsl.io._
+import org.http4s.client.jdkhttpclient.JdkHttpClient
 import org.http4s.Method._
 
-class DiscordClient(client: Client[IO], token: String) {
+class DiscordClient(token: String, client: Client[IO]) {
 
   def sendMessage(message: String, channelId: String, tts: Boolean = false): IO[Message] =
     client
@@ -37,4 +38,9 @@ class DiscordClient(client: Client[IO], token: String) {
           headers(token)
         )
       )
+}
+
+object DiscordClient {
+  def make(token: String)(implicit cs: ContextShift[IO]): Resource[IO, DiscordClient] =
+    Resource.liftF(utils.javaClient.map(javaClient => new DiscordClient(token, JdkHttpClient[IO](javaClient))))
 }
