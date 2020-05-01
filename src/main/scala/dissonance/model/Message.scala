@@ -3,6 +3,7 @@ package dissonance.model
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
+import dissonance.model.user.User
 
 case class Message(
     channelId: String,

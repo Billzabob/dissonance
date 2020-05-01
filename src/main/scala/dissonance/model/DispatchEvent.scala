@@ -1,6 +1,7 @@
 package dissonance.model
 
 import cats.implicits._
+import dissonance.model.user.User
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
@@ -215,7 +216,7 @@ object DispatchEvent {
 
   case class Ready(
       v: Integer,
-      user: Json,
+      user: User,
       sessionId: String,
       shard: Option[(Int, Int)]
   ) extends DispatchEvent
