@@ -17,18 +17,17 @@ object DispatchEvent {
   implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
 
   // TODO: Implement these types
-  type ActivityFlags = Unit
-  type Assets        = Unit
-  type ChannelType   = Unit
-  type ClientStatus  = Unit
-  type GuildFeature  = String
-  type GuildMember   = Unit
-  type Overwrite     = Unit
-  type Party         = Unit
-  type Role          = Unit
-  type Secrets       = Unit
-  type Snowflake     = Long
-  type VoiceState    = Unit
+  type Assets       = Unit
+  type ChannelType  = Unit
+  type ClientStatus = Unit
+  type GuildFeature = String
+  type GuildMember  = Unit
+  type Overwrite    = Unit
+  type Party        = Unit
+  type Role         = Unit
+  type Secrets      = Unit
+  type Snowflake    = Long
+  type VoiceState   = Unit
 
   // TODO: Move case classes that don't extend DispatchEvent out of here since this file is already gonna be huge
   case class Activity(
@@ -45,11 +44,26 @@ object DispatchEvent {
       assets: Assets,
       secrets: Secrets,
       instance: Boolean,
-      flags: ActivityFlags
+      flags: List[ActivityFlag]
   )
 
   object Activity {
     implicit val activityDecoder: Decoder[Activity] = deriveConfiguredDecoder
+  }
+
+  sealed trait ActivityFlag extends BitFlag with Product with Serializable
+
+  object ActivityFlag {
+    case object Instance    extends ActivityFlag { val mask = 1 << 0 }
+    case object Join        extends ActivityFlag { val mask = 1 << 1 }
+    case object Spectate    extends ActivityFlag { val mask = 1 << 2 }
+    case object JoinRequest extends ActivityFlag { val mask = 1 << 3 }
+    case object Sync        extends ActivityFlag { val mask = 1 << 4 }
+    case object Play        extends ActivityFlag { val mask = 1 << 5 }
+
+    val allFlags = List(Instance, Join, Spectate, JoinRequest, Sync, Play)
+
+    implicit val decoder: Decoder[List[ActivityFlag]] = BitFlag.decoder(allFlags)
   }
 
   sealed trait ActivityType extends Product with Serializable
