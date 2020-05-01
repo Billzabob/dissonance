@@ -9,7 +9,7 @@ object PremiumType {
   case object NitroClassic extends PremiumType
   case object Nitro        extends PremiumType
 
-  implicit val messageDecoder: Decoder[PremiumType] = Decoder.decodeInt.map {
+  implicit val messageDecoder: Decoder[PremiumType] = Decoder[Int].map {
     case 0 => None
     case 1 => NitroClassic
     case 2 => Nitro
