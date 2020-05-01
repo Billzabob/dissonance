@@ -11,8 +11,8 @@ object Main extends IOApp {
     Discord.make(token).use(discord => discord.subscribe(handleEvents(discord.client))).as(ExitCode.Success)
   }
 
-  def handleEvents(discordClient: DiscordClient)(event: DispatchEvent): IO[Unit] = event match {
-    case MessageCreate(Message(channelId, "ping", _)) => discordClient.sendMessage("pong", channelId).void
-    case other                                        => utils.putStrLn(other.toString)
+  def handleEvents(discordClient: DiscordClient): DispatchEvent => IO[Unit] = {
+    case MessageCreate(Message("ping", channelId, _)) => discordClient.sendMessage("pong", channelId).void
+    case _                                            => IO.unit
   }
 }

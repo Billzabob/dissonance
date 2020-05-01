@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import dissonance.model.activity.Activity
 import dissonance.model.user.User
+import dissonance.model.guild.{Guild, GuildBan}
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
@@ -12,18 +13,11 @@ import java.time.OffsetDateTime
 sealed trait DispatchEvent extends Product with Serializable
 
 object DispatchEvent {
-
-  implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
-
   // TODO: Implement these types
   type ChannelType  = Json
   type ClientStatus = Json
-  type GuildFeature = String
-  type GuildMember  = Json
   type Overwrite    = Json
-  type Role         = Json
   type Snowflake    = Long
-  type VoiceState   = Unit
 
   case class Channel(
       id: Snowflake,
@@ -46,85 +40,19 @@ object DispatchEvent {
       lastPinTimestamp: Option[OffsetDateTime]
   ) extends DispatchEvent
 
-  object Channel {
-    implicit val channelDecoder: Decoder[Channel] = deriveConfiguredDecoder
-  }
-
   case class ChannelPinsUpdate(guildId: Snowflake, channelId: Snowflake, lastPinTimestamp: OffsetDateTime) extends DispatchEvent
 
-  object ChannelPinsUpdate {
-    implicit val channelPinsUpdateDecoder: Decoder[ChannelPinsUpdate] = deriveConfiguredDecoder
-  }
+  case class GuildCreate(guild: Guild) extends DispatchEvent
 
-  case class Guild(
-      id: Snowflake,
-      name: String,
-      icon: Option[String],
-      splash: Option[String],
-      discoverySplash: Option[String],
-      owner: Option[Boolean],
-      ownerId: Snowflake,
-      permissions: Option[Int],
-      region: String,
-      afkChannelId: Option[Snowflake],
-      afkTimeout: Integer,
-      embedEnabled: Option[Boolean],
-      embedChannelId: Option[Snowflake],
-      verificationLevel: Int,
-      defaultMessageNotifications: Int,
-      explicitContentFilter: Int,
-      roles: List[Role],
-      emojis: List[Emoji],
-      features: List[GuildFeature],
-      mfaLevel: Int,
-      applicationId: Option[Snowflake],
-      widgetEnabled: Option[Boolean],
-      widgetChannelId: Option[Snowflake],
-      systemChannelId: Option[Snowflake],
-      systemChannelFlags: Int,
-      rulesChannelId: Option[Snowflake],
-      joinedAt: OffsetDateTime,
-      large: Boolean,
-      unavailable: Boolean,
-      memberCount: Int,
-      voiceStates: List[VoiceState],
-      members: List[GuildMember],
-      channels: List[Channel],
-      presences: List[PresenceUpdate],
-      maxPresences: Option[Int],
-      maxMembers: Option[Int],
-      vanityUrlCode: Option[String],
-      description: Option[String],
-      banner: Option[String],
-      premiumTier: Int,
-      premiumSubscriptionCount: Integer,
-      preferredLocale: String,
-      publicUpdatesChannelId: Option[Snowflake],
-      approximateMemberCount: Option[Int],
-      approximatePresenceCount: Option[Int]
-  ) extends DispatchEvent
+  case class GuildUpdate(guild: Guild) extends DispatchEvent
 
-  object Guild {
-    implicit val guildDecoder: Decoder[Guild] = deriveConfiguredDecoder
-  }
+  case class GuildBanAdd(guildBan: GuildBan) extends DispatchEvent
 
-  case class GuildBan(guildId: Snowflake, user: User) extends DispatchEvent
-
-  object GuildBan {
-    implicit val guildBanDecoder: Decoder[GuildBan] = deriveConfiguredDecoder
-  }
+  case class GuildBanRemove(guildBan: GuildBan) extends DispatchEvent
 
   case class GuildEmojis(guildId: Snowflake, emojis: List[Emoji]) extends DispatchEvent
 
-  object GuildEmojis {
-    implicit val guildEmojisDecoder: Decoder[GuildEmojis] = deriveConfiguredDecoder
-  }
-
   case class GuildId(guildId: Snowflake) extends DispatchEvent
-
-  object GuildId {
-    implicit val guildIdDecoder: Decoder[GuildId] = deriveConfiguredDecoder
-  }
 
   case class GuildMemberUpdate(json: Json) extends DispatchEvent
 
@@ -142,28 +70,29 @@ object DispatchEvent {
       nick: Option[String]
   ) extends DispatchEvent
 
-  object PresenceUpdate {
-    implicit val presenceUpdateDecoder: Decoder[PresenceUpdate] = deriveConfiguredDecoder
-  }
-
   case class ReactionAdd(json: Json) extends DispatchEvent
 
   case class Ready(
       v: Integer,
       user: User,
       sessionId: String,
-      shard: Option[(Int, Int)]
+      shard: Option[(Int, Int)] // TODO: Parse the 2 element array into a case class instead of tuple
   ) extends DispatchEvent
-
-  object Ready {
-    implicit val readyDecoder: Decoder[Ready] = deriveConfiguredDecoder
-  }
 
   case object Resumed extends DispatchEvent
 
   case class TypingStart(json: Json) extends DispatchEvent
 
   def ImplementMe(name: String) = DecodingFailure(s"UNIMPLEMENTED: $name", Nil).asLeft
+
+  implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
+
+  implicit val channelDecoder: Decoder[Channel]                     = deriveConfiguredDecoder
+  implicit val channelPinsUpdateDecoder: Decoder[ChannelPinsUpdate] = deriveConfiguredDecoder
+  implicit val guildEmojisDecoder: Decoder[GuildEmojis]             = deriveConfiguredDecoder
+  implicit val guildIdDecoder: Decoder[GuildId]                     = deriveConfiguredDecoder
+  implicit val presenceUpdateDecoder: Decoder[PresenceUpdate]       = deriveConfiguredDecoder
+  implicit val readyDecoder: Decoder[Ready]                         = deriveConfiguredDecoder
 
   // TODO: Finish implementing all the events:
   // https://discordapp.com/developers/docs/topics/gateway#commands-and-events-gateway-events
@@ -174,6 +103,7 @@ object DispatchEvent {
       Resumed.asRight
     // TODO: We lose context here. CHANNEL_CREATE, CHANNEL_UPDATE, and CHANNEL_DELETE provide a
     // TODO: Channel object but we don't know if it was created or updated or deleted anymore
+    // TODO: We can do this just like we did with MessageCreate/MessageDelete and GuildCreate/GuildUpdate
     case "CHANNEL_CREATE" =>
       data.as[Channel]
     case "CHANNEL_UPDATE" =>
@@ -183,16 +113,16 @@ object DispatchEvent {
     case "CHANNEL_PINS_UPDATE" =>
       data.as[ChannelPinsUpdate]
     case "GUILD_CREATE" =>
-      data.as[Guild]
+      data.as[Guild].map(GuildCreate)
     case "GUILD_UPDATE" =>
-      data.as[Guild]
+      data.as[Guild].map(GuildUpdate)
     case n @ "GUILD_DELETE" =>
       // Not sure on this one, since the docs give an example but no schema
       ImplementMe(n)
     case "GUILD_BAN_ADD" =>
-      data.as[GuildBan]
+      data.as[GuildBan].map(GuildBanAdd)
     case "GUILD_BAN_REMOVE" =>
-      data.as[GuildBan]
+      data.as[GuildBan].map(GuildBanRemove)
     case "GUILD_EMOJIS_UPDATE" =>
       data.as[GuildEmojis]
     case "GUILD_INTEGRATIONS_UPDATE" =>

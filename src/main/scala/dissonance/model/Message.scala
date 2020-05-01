@@ -6,8 +6,8 @@ import io.circe.generic.extras.semiauto._
 import dissonance.model.user.User
 
 case class Message(
-    channelId: String,
     content: String,
+    channelId: String,
     author: User
 )
 
