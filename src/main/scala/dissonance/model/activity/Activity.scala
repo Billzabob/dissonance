@@ -1,6 +1,7 @@
 package dissonance.model.activity
 
-import dissonance.model.DispatchEvent.{Emoji, Snowflake}
+import dissonance.model.DispatchEvent.Snowflake
+import dissonance.model.Emoji
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._

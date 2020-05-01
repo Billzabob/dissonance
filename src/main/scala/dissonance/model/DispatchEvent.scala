@@ -9,8 +9,6 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import java.time.OffsetDateTime
 
-// TODO: This sealed trait is going to have a TON of members that all need to be in this file, making it huge.
-// TODO: Is there a better way?
 sealed trait DispatchEvent extends Product with Serializable
 
 object DispatchEvent {
@@ -26,13 +24,6 @@ object DispatchEvent {
   type Role         = Json
   type Snowflake    = Long
   type VoiceState   = Unit
-
-  // TODO: Move case classes that don't extend DispatchEvent out of here since this file is already gonna be huge
-  case class Emoji(name: String, id: Snowflake, animated: Boolean)
-
-  object Emoji {
-    implicit val emojiDecoder: Decoder[Emoji] = deriveConfiguredDecoder
-  }
 
   case class Channel(
       id: Snowflake,
