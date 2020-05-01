@@ -31,7 +31,8 @@ class UserSpec extends AnyFlatSpec with Matchers {
             publicFlags = List(HouseBravery)
         )
 
-    "a user json" should "be parsed correctly" in {
+    "a partial user json" should "be parsed correctly" in {
+
         val rawJson = readFileFromResource("/models/partialUser.json").unsafeRunSync()
 
         val expectedUser = baseUser
