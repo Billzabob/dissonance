@@ -1,11 +1,12 @@
 package dissonance.model
 
+import cats.data.NonEmptyList
 import cats.implicits._
 import dissonance.model.user.User
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
-import java.time.Instant
+import java.time.{Instant, OffsetDateTime}
 import org.http4s.circe._
 import org.http4s.Uri
 
@@ -18,16 +19,16 @@ object DispatchEvent {
   implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
 
   // TODO: Implement these types
-  type ActivityFlags = Unit
-  type Assets        = Unit
-  type ChannelType   = Unit
-  type ClientStatus  = Unit
+  type ActivityFlags = Json
+  type Assets        = Json
+  type ChannelType   = Json
+  type ClientStatus  = Json
   type GuildFeature  = String
-  type GuildMember   = Unit
-  type Overwrite     = Unit
-  type Party         = Unit
-  type Role          = Unit
-  type Secrets       = Unit
+  type GuildMember   = Json
+  type Overwrite     = Json
+  type Party         = Json
+  type Role          = Json
+  type Secrets       = Json
   type Snowflake     = Long
   type VoiceState    = Unit
 
@@ -36,7 +37,7 @@ object DispatchEvent {
       name: String,
       `type`: ActivityType,
       url: Option[Uri],
-      createdAt: Timestamp,
+      createdAt: Instant,
       timestamps: Timestamps,
       applicationId: Snowflake,
       details: Option[String],
@@ -70,19 +71,10 @@ object DispatchEvent {
     }
   }
 
-  case class Timestamps(start: Timestamp, end: Timestamp)
+  case class Timestamps(start: Instant, end: Instant)
 
   object Timestamps {
     implicit val timestampsDecoder: Decoder[Timestamps] = deriveConfiguredDecoder
-  }
-
-  case class Timestamp(time: Instant)
-
-  object Timestamp {
-    // Decodes either an ISO8601 timestamp string or a unix epoch number, since Discord uses both in different places
-    // Note: If we need to have an Encoder this won't work since we won't know whether to turn this into a timestamp or an epoch number
-    implicit val timestampDecoder: Decoder[Timestamp] =
-      (Decoder[Instant] or Decoder[Long].map(Instant.ofEpochMilli)).map(Timestamp.apply)
   }
 
   case class Emoji(name: String, id: Snowflake, animated: Boolean)
@@ -94,29 +86,29 @@ object DispatchEvent {
   case class Channel(
       id: Snowflake,
       `type`: ChannelType,
-      guildId: Snowflake,
+      guildId: Option[Snowflake],
       position: Int,
       permissionOverwrites: List[Overwrite],
       name: String,
       topic: Option[String],
-      nsfw: Boolean,
+      nsfw: Option[Boolean],
       lastMessageId: Option[Snowflake],
-      bitrate: Int,
-      userLimit: Int,
-      rateLimitPerUser: Int,
-      recipients: List[User],
+      bitrate: Option[Int],
+      userLimit: Option[Int],
+      rateLimitPerUser: Option[Int],
+      recipients: Option[NonEmptyList[User]],
       icon: Option[String],
-      ownerId: Snowflake,
-      applicationId: Snowflake,
+      ownerId: Option[Snowflake],
+      applicationId: Option[Snowflake],
       parentId: Option[Snowflake],
-      lastPinTimestamp: Timestamp
+      lastPinTimestamp: Option[OffsetDateTime]
   ) extends DispatchEvent
 
   object Channel {
     implicit val channelDecoder: Decoder[Channel] = deriveConfiguredDecoder
   }
 
-  case class ChannelPinsUpdate(guildId: Snowflake, channelId: Snowflake, lastPinTimestamp: Timestamp) extends DispatchEvent
+  case class ChannelPinsUpdate(guildId: Snowflake, channelId: Snowflake, lastPinTimestamp: OffsetDateTime) extends DispatchEvent
 
   object ChannelPinsUpdate {
     implicit val channelPinsUpdateDecoder: Decoder[ChannelPinsUpdate] = deriveConfiguredDecoder
@@ -128,13 +120,13 @@ object DispatchEvent {
       icon: Option[String],
       splash: Option[String],
       discoverySplash: Option[String],
-      owner: Boolean,
+      owner: Option[Boolean],
       ownerId: Snowflake,
-      permissions: Int,
+      permissions: Option[Int],
       region: String,
       afkChannelId: Option[Snowflake],
       afkTimeout: Integer,
-      embedEnabled: Boolean,
+      embedEnabled: Option[Boolean],
       embedChannelId: Option[Snowflake],
       verificationLevel: Int,
       defaultMessageNotifications: Int,
@@ -144,12 +136,12 @@ object DispatchEvent {
       features: List[GuildFeature],
       mfaLevel: Int,
       applicationId: Option[Snowflake],
-      widgetEnabled: Boolean,
+      widgetEnabled: Option[Boolean],
       widgetChannelId: Option[Snowflake],
       systemChannelId: Option[Snowflake],
       systemChannelFlags: Int,
       rulesChannelId: Option[Snowflake],
-      joinedAt: Timestamp,
+      joinedAt: OffsetDateTime,
       large: Boolean,
       unavailable: Boolean,
       memberCount: Int,
@@ -158,16 +150,16 @@ object DispatchEvent {
       channels: List[Channel],
       presences: List[PresenceUpdate],
       maxPresences: Option[Int],
-      maxMembers: Int,
+      maxMembers: Option[Int],
       vanityUrlCode: Option[String],
       description: Option[String],
       banner: Option[String],
       premiumTier: Int,
       premiumSubscriptionCount: Integer,
-      preferredLocal: String,
+      preferredLocale: String,
       publicUpdatesChannelId: Option[Snowflake],
-      approximateMemberCount: Int,
-      approximatePresenceCount: Int
+      approximateMemberCount: Option[Int],
+      approximatePresenceCount: Option[Int]
   ) extends DispatchEvent
 
   object Guild {
@@ -204,7 +196,7 @@ object DispatchEvent {
       status: String,
       activities: List[Activity],
       clientStatus: ClientStatus,
-      premiumSince: Option[Timestamp],
+      premiumSince: Option[OffsetDateTime],
       nick: Option[String]
   ) extends DispatchEvent
 

@@ -133,7 +133,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
     sequenceNumber.get.map(Heartbeat.apply).map(heartbeat => Text(heartbeat.asJson.noSpaces))
 
   private def identityMessage =
-    Text(s"""{"op":2,"d":{"token":"$token","intents":512,"properties":{"$$os":"","$$browser":"","$$device":""}}}""")
+    Text(s"""{"op":2,"d":{"token":"$token","intents":32509,"properties":{"$$os":"","$$browser":"","$$device":""}}}""")
 
   private def resumeMessage(sessionId: String, sequenceNumber: Option[Int]) =
     Text(s"""{"op":6,"d":{"token":"$token","session_id":"$sessionId","seq":"$sequenceNumber"}}""")
