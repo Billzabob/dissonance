@@ -1,8 +1,8 @@
-package discord
+package dissonance
 
 import cats.effect.{ExitCode, IO, IOApp}
-import discord.model.{DispatchEvent, Message}
-import discord.model.DispatchEvent.MessageCreate
+import dissonance.model.{DispatchEvent, Message}
+import dissonance.model.DispatchEvent.MessageCreate
 
 object Main extends IOApp {
 

@@ -1,9 +1,9 @@
-package discord
+package dissonance
 
 import cats.effect._
-import discord.Discord._
-import discord.model.embed.Embed
-import discord.model.Message
+import dissonance.Discord._
+import dissonance.model.embed.Embed
+import dissonance.model.Message
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.circe.CirceEntityCodec._

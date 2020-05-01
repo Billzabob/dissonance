@@ -1,4 +1,4 @@
-package discord.model.embed
+package dissonance.model.embed
 
 import io.circe.Encoder
 import io.circe.generic.extras.Configuration

@@ -1,4 +1,4 @@
-package discord
+package dissonance
 
 import io.estatico.newtype.macros.newtype
 

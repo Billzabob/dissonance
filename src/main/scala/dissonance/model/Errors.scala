@@ -1,4 +1,4 @@
-package discord.model
+package dissonance.model
 
 import scala.util.control.NoStackTrace
 

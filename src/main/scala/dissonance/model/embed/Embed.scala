@@ -1,4 +1,4 @@
-package discord.model.embed
+package dissonance.model.embed
 
 import cats.data.NonEmptyList
 import cats.implicits._

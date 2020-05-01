@@ -1,4 +1,4 @@
-package discord.model
+package dissonance.model
 
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration

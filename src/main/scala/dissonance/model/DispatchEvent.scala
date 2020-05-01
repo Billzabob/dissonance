@@ -1,4 +1,4 @@
-package discord.model
+package dissonance.model
 
 import cats.implicits._
 import io.circe._

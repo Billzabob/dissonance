@@ -1,7 +1,7 @@
-package discord.model
+package dissonance.model
 
 import cats.implicits._
-import discord.model.DispatchEvent
+import dissonance.model.DispatchEvent
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._

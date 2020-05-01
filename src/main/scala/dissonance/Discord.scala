@@ -1,14 +1,14 @@
-package discord
+package dissonance
 
 import cats.effect._
 import cats.effect.concurrent._
 import cats.implicits._
-import discord.Discord._
-import discord.model._
-import discord.model.DispatchEvent._
-import discord.model.Errors._
-import discord.model.Event._
-import discord.utils._
+import dissonance.Discord._
+import dissonance.model._
+import dissonance.model.DispatchEvent._
+import dissonance.model.Errors._
+import dissonance.model.Event._
+import dissonance.utils._
 import fs2.concurrent.Queue
 import fs2.Stream
 import io.circe.parser._

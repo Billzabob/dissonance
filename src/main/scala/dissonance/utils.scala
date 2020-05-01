@@ -1,4 +1,4 @@
-package discord
+package dissonance
 
 import cats.effect._
 import cats.implicits._

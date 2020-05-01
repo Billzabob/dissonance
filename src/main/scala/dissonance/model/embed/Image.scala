@@ -1,4 +1,4 @@
-package discord.model.embed
+package dissonance.model.embed
 
 import io.circe.Encoder
 import io.circe.generic.extras.Configuration
@@ -6,9 +6,9 @@ import io.circe.generic.extras.semiauto._
 import org.http4s.circe._
 import org.http4s.Uri
 
-case class Video(url: Option[Uri], height: Option[Int], width: Option[Int])
+case class Image(url: Option[Uri], proxyUrl: Option[Uri], height: Option[Int], width: Option[Int])
 
-object Video {
+object Image {
   implicit val config: Configuration        = Configuration.default.withSnakeCaseMemberNames
-  implicit val videoEncoder: Encoder[Video] = deriveConfiguredEncoder
+  implicit val imageEncoder: Encoder[Image] = deriveConfiguredEncoder
 }
