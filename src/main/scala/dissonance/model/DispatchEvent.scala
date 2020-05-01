@@ -2,13 +2,12 @@ package dissonance.model
 
 import cats.data.NonEmptyList
 import cats.implicits._
+import dissonance.model.activity.Activity
 import dissonance.model.user.User
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
-import java.time.{Instant, OffsetDateTime}
-import org.http4s.circe._
-import org.http4s.Uri
+import java.time.OffsetDateTime
 
 // TODO: This sealed trait is going to have a TON of members that all need to be in this file, making it huge.
 // TODO: Is there a better way?
@@ -19,64 +18,16 @@ object DispatchEvent {
   implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
 
   // TODO: Implement these types
-  type ActivityFlags = Json
-  type Assets        = Json
-  type ChannelType   = Json
-  type ClientStatus  = Json
-  type GuildFeature  = String
-  type GuildMember   = Json
-  type Overwrite     = Json
-  type Party         = Json
-  type Role          = Json
-  type Secrets       = Json
-  type Snowflake     = Long
-  type VoiceState    = Unit
+  type ChannelType  = Json
+  type ClientStatus = Json
+  type GuildFeature = String
+  type GuildMember  = Json
+  type Overwrite    = Json
+  type Role         = Json
+  type Snowflake    = Long
+  type VoiceState   = Unit
 
   // TODO: Move case classes that don't extend DispatchEvent out of here since this file is already gonna be huge
-  case class Activity(
-      name: String,
-      `type`: ActivityType,
-      url: Option[Uri],
-      createdAt: Instant,
-      timestamps: Timestamps,
-      applicationId: Snowflake,
-      details: Option[String],
-      state: Option[String],
-      emoji: Option[Emoji],
-      party: Party,
-      assets: Assets,
-      secrets: Secrets,
-      instance: Boolean,
-      flags: ActivityFlags
-  )
-
-  object Activity {
-    implicit val activityDecoder: Decoder[Activity] = deriveConfiguredDecoder
-  }
-
-  sealed trait ActivityType extends Product with Serializable
-
-  object ActivityType {
-    case object Game      extends ActivityType
-    case object Streaming extends ActivityType
-    case object Listening extends ActivityType
-    case object Custom    extends ActivityType
-
-    implicit val activityTypeDecoder: Decoder[ActivityType] = Decoder[Int].emap {
-      case 0     => Right(Game)
-      case 1     => Right(Streaming)
-      case 2     => Right(Listening)
-      case 4     => Right(Custom)
-      case other => Left(s"Unknown activity type ID: $other")
-    }
-  }
-
-  case class Timestamps(start: Instant, end: Instant)
-
-  object Timestamps {
-    implicit val timestampsDecoder: Decoder[Timestamps] = deriveConfiguredDecoder
-  }
-
   case class Emoji(name: String, id: Snowflake, animated: Boolean)
 
   object Emoji {
