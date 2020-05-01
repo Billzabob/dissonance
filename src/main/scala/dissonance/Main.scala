@@ -13,6 +13,6 @@ object Main extends IOApp {
 
   def handleEvents(discordClient: DiscordClient)(event: DispatchEvent): IO[Unit] = event match {
     case MessageCreate(Message(channelId, "ping", _)) => discordClient.sendMessage("pong", channelId).void
-    case _                                            => IO.unit
+    case other                                        => utils.putStrLn(other.toString)
   }
 }

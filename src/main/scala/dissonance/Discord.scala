@@ -33,14 +33,13 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
   type SessionId      = Ref[IO, Option[String]]
   type Acks           = Queue[IO, Unit]
 
-  def subscribe(eventHandler: EventHandler): IO[Unit] =
-    for {
-      uri            <- getUri
-      sequenceNumber <- Ref[IO].of(none[Int])
-      sessionId      <- Ref[IO].of(none[String])
-      acks           <- Queue.unbounded[IO, Unit]
-      _              <- processEvents(uri, sequenceNumber, acks, sessionId).evalMap(eventHandler).compile.drain
-    } yield ()
+  def subscribe(eventHandler: EventHandler): IO[Nothing] = {
+    val sequenceNumber = Ref[IO].of(none[Int])
+    val sessionId      = Ref[IO].of(none[String])
+    val acks           = Queue.unbounded[IO, Unit]
+
+    (getUri, sequenceNumber, sessionId, acks).mapN(processEvents).flatMap(_.evalMap(eventHandler).drain.compile.lastOrError)
+  }
 
   private def getUri: IO[Uri] =
     httpClient
@@ -53,8 +52,8 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
   private def processEvents(
       uri: Uri,
       sequenceNumber: SequenceNumber,
-      acks: Acks,
-      sessionId: SessionId
+      sessionId: SessionId,
+      acks: Acks
   ): Stream[IO, DispatchEvent] =
     Stream
       .resource(wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers(token)))))
@@ -73,11 +72,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
         case Text(data, _) => data
       }
       .map(decode[Event])
-      .flatMap {
-        case Right(a) => Stream.emit(a)
-        case Left(b)  => Stream.eval_(putStrLn(b.toString))
-      }
-      // .rethrow // TODO: rethrow instead of flatmap eventually
+      .rethrow
       .map(event => handleEvents(event, sequenceNumber, acks, sessionId, connection))
       .parJoinUnbounded
       .interruptWhen(connection.closeFrame.get.map(handleConnectionClose))
