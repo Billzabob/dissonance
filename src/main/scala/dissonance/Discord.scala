@@ -75,7 +75,6 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       .rethrow
       .map(event => handleEvents(event, sequenceNumber, acks, sessionId, connection))
       .parJoinUnbounded
-      .interruptWhen(connection.closeFrame.get.map(handleConnectionClose))
       .handleErrorWith(e => Stream.eval_(putStrLn(e.toString)))
   }
 
@@ -109,9 +108,6 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
     case Some(id) =>
       sequenceNumber.get.map(s => resumeMessage(id, s))
   }
-
-  private def handleConnectionClose(closeFrame: Close): Either[Throwable, Unit] =
-    ConnectionClosedWithError(closeFrame.statusCode, closeFrame.reason).asLeft
 
   private def heartbeat(
       interval: FiniteDuration,
