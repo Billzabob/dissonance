@@ -4,6 +4,7 @@ import cats.implicits._
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
+import discord.model.user._
 import java.time.Instant
 import org.http4s.circe._
 import org.http4s.Uri
@@ -215,7 +216,7 @@ object DispatchEvent {
 
   case class Ready(
       v: Integer,
-      user: Json,
+      user: User,
       sessionId: String,
       shard: Option[(Int, Int)]
   ) extends DispatchEvent

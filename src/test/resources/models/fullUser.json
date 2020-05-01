@@ -1,0 +1,15 @@
+{
+    "id": "80351110224678912",
+    "username": "Nelly",
+    "discriminator": "1337",
+    "avatar": "8342729096ea3675442027381ff50dfe",
+    "bot": false,
+    "system": false,
+    "mfa_enabled": true,
+    "locale": "en",
+    "verified": true,
+    "email": "nelly@discordapp.com",
+    "flags": 64,
+    "premium_type": 1,
+    "public_flags": 64
+}
