@@ -24,5 +24,4 @@ object utils {
                   }
       javaClient <- IO(HttpClient.newBuilder.sslParameters(sslParams).build)
     } yield javaClient
-
 }

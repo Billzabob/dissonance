@@ -16,13 +16,13 @@ case class User(
     locale: Option[String],
     verified: Option[Boolean],
     email: Option[String],
-    flags: List[UserRole],
+    flags: List[Role],
     premiumType: Option[PremiumType],
-    publicFlags: List[UserRole]
+    publicFlags: List[Role]
 )
 
 object User {
   implicit val config: Configuration         = Configuration.default.withSnakeCaseMemberNames
   implicit val idDecoder: Decoder[DiscordId] = Decoder[Long].map(DiscordId.apply)
-  implicit val messageDecoder: Decoder[User] = deriveConfiguredDecoder
+  implicit val userDecoder: Decoder[User]    = deriveConfiguredDecoder
 }

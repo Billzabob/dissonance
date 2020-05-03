@@ -2,6 +2,7 @@ package dissonance.model.embed
 
 import cats.data.NonEmptyList
 import cats.implicits._
+import dissonance.model.Color
 import io.circe.Encoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._

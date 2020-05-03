@@ -4,7 +4,7 @@ import cats.effect._
 import cats.implicits._
 import dissonance.model.DiscordId
 import dissonance.model.user.PremiumType.NitroClassic
-import dissonance.model.user.UserRole.HouseBravery
+import dissonance.model.user.Role.HouseBravery
 import dissonance.TestUtils._
 import io.circe.parser._
 import org.scalatest.flatspec.AnyFlatSpec

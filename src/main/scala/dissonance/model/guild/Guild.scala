@@ -1,9 +1,9 @@
 package dissonance.model.guild
 
-import dissonance.model.DispatchEvent.{Channel, PresenceUpdate, Snowflake}
-import dissonance.model.Emoji
-import dissonance.model.guild.Guild._
-import io.circe.{Decoder, Json}
+import dissonance.model.channel.Channel
+import dissonance.model.Event.{PresenceUpdate, Snowflake}
+import dissonance.model.{Emoji, Permission}
+import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import java.time.OffsetDateTime
@@ -16,7 +16,7 @@ case class Guild(
     discoverySplash: Option[String],
     owner: Option[Boolean],
     ownerId: Snowflake,
-    permissions: Option[Int],
+    permissions: List[Permission],
     region: String,
     afkChannelId: Option[Snowflake],
     afkTimeout: Integer,
@@ -27,7 +27,7 @@ case class Guild(
     explicitContentFilter: Int,
     roles: List[Role],
     emojis: List[Emoji],
-    features: List[GuildFeature],
+    features: List[Feature],
     mfaLevel: Int,
     applicationId: Option[Snowflake],
     widgetEnabled: Option[Boolean],
@@ -40,7 +40,7 @@ case class Guild(
     unavailable: Boolean,
     memberCount: Int,
     voiceStates: List[VoiceState],
-    members: List[GuildMember],
+    members: List[Member],
     channels: List[Channel],
     presences: List[PresenceUpdate],
     maxPresences: Option[Int],
@@ -57,12 +57,6 @@ case class Guild(
 )
 
 object Guild {
-  // TODO: Implement
-  type GuildFeature = String
-  type GuildMember  = Json
-  type Role         = Json
-  type VoiceState   = Unit
-
   implicit val config: Configuration        = Configuration.default.withSnakeCaseMemberNames
   implicit val guildDecoder: Decoder[Guild] = deriveConfiguredDecoder
 }

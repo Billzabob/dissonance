@@ -17,4 +17,6 @@ lazy val root = (project in file("."))
 addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
 
-fork in run := true
+fork           := true // Fork to separate process
+connectInput   := true // Connects stdin to sbt during forked runs
+outputStrategy := Some(StdoutOutput) // Get rid of output prefix

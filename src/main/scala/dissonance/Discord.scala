@@ -5,9 +5,9 @@ import cats.effect.concurrent._
 import cats.implicits._
 import dissonance.Discord._
 import dissonance.model._
-import dissonance.model.DispatchEvent._
-import dissonance.model.Errors._
 import dissonance.model.Event._
+import dissonance.model.Errors._
+import dissonance.model.ControlMessage._
 import dissonance.utils._
 import fs2.concurrent.Queue
 import fs2.Stream
@@ -28,17 +28,16 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
 
   val client = new DiscordClient(token, httpClient)
 
-  type EventHandler   = DispatchEvent => IO[Unit]
   type SequenceNumber = Ref[IO, Option[Int]]
   type SessionId      = Ref[IO, Option[String]]
   type Acks           = Queue[IO, Unit]
 
-  def subscribe(eventHandler: EventHandler): IO[Nothing] = {
+  def subscribe: Stream[IO, Event] = {
     val sequenceNumber = Ref[IO].of(none[Int])
     val sessionId      = Ref[IO].of(none[String])
     val acks           = Queue.unbounded[IO, Unit]
 
-    (getUri, sequenceNumber, sessionId, acks).mapN(processEvents).flatMap(_.evalMap(eventHandler).drain.compile.lastOrError)
+    Stream.eval((getUri, sequenceNumber, sessionId, acks).mapN(processEvents)).flatten
   }
 
   private def getUri: IO[Uri] =
@@ -54,7 +53,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       sequenceNumber: SequenceNumber,
       sessionId: SessionId,
       acks: Acks
-  ): Stream[IO, DispatchEvent] =
+  ): Stream[IO, Event] =
     Stream
       .resource(wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers(token)))))
       .flatMap(connection => events(connection, sequenceNumber, acks, sessionId))
@@ -65,13 +64,13 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       sequenceNumber: SequenceNumber,
       acks: Acks,
       sessionId: SessionId
-  ): Stream[IO, DispatchEvent] = {
+  ): Stream[IO, Event] = {
     connection.receiveStream
       .collect {
         // Will always be text since we request JSON encoding
         case Text(data, _) => data
       }
-      .map(decode[Event])
+      .map(decode[ControlMessage])
       .rethrow
       .map(event => handleEvents(event, sequenceNumber, acks, sessionId, connection))
       .parJoinUnbounded
@@ -79,12 +78,12 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
   }
 
   private def handleEvents(
-      event: Event,
+      event: ControlMessage,
       sequenceNumber: SequenceNumber,
       acks: Acks,
       sessionId: SessionId,
       connection: WSConnectionHighLevel[IO]
-  ): Stream[IO, DispatchEvent] = event match {
+  ): Stream[IO, Event] = event match {
     case Hello(interval) =>
       Stream.eval_(identifyOrResume(sessionId, sequenceNumber).flatMap(connection.send)) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
     case HeartBeatAck =>

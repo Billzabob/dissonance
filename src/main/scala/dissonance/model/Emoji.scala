@@ -1,6 +1,6 @@
 package dissonance.model
 
-import dissonance.model.DispatchEvent.Snowflake
+import dissonance.model.Event.Snowflake
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
