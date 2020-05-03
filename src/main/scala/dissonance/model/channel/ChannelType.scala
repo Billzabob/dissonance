@@ -2,7 +2,7 @@ package dissonance.model.channel
 
 import io.circe.Decoder
 
-sealed trait ChannelType
+sealed trait ChannelType extends Product with Serializable
 
 object ChannelType {
   case object GuildText          extends ChannelType

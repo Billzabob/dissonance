@@ -3,7 +3,7 @@ package dissonance.model.guild
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 
-sealed trait Feature
+sealed trait Feature extends Product with Serializable
 
 object Feature {
   case object InviteSplash         extends Feature

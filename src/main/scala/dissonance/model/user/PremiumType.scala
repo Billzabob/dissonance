@@ -2,7 +2,7 @@ package dissonance.model.user
 
 import io.circe.Decoder
 
-sealed trait PremiumType
+sealed trait PremiumType extends Product with Serializable
 
 object PremiumType {
   case object None         extends PremiumType

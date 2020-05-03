@@ -2,7 +2,7 @@ package dissonance.model.channel
 
 import io.circe.Decoder
 
-sealed trait OverwriteType
+sealed trait OverwriteType extends Product with Serializable
 
 object OverwriteType {
   case object Role   extends OverwriteType
