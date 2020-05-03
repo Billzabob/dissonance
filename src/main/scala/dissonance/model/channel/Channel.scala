@@ -1,6 +1,5 @@
 package dissonance.model.channel
 
-import cats.data.NonEmptyList
 import dissonance.model.Event.Snowflake
 import dissonance.model.user.User
 import io.circe.Decoder
@@ -13,7 +12,7 @@ case class Channel(
     `type`: ChannelType,
     guildId: Option[Snowflake],
     position: Option[Int],
-    permissionOverwrites: Option[NonEmptyList[Overwrite]],
+    permissionOverwrites: Option[List[Overwrite]],
     name: Option[String],
     topic: Option[String],
     nsfw: Option[Boolean],
@@ -21,7 +20,7 @@ case class Channel(
     bitrate: Option[Int],
     userLimit: Option[Int],
     rateLimitPerUser: Option[Int],
-    recipients: Option[NonEmptyList[User]],
+    recipients: Option[List[User]],
     icon: Option[String],
     ownerId: Option[Snowflake],
     applicationId: Option[Snowflake],

@@ -10,7 +10,7 @@ import java.time.OffsetDateTime
 case class Member(
     user: Option[User],
     nick: Option[String],
-    roles: Option[Snowflake],
+    roles: List[Snowflake],
     joinedAt: OffsetDateTime,
     premiumSince: Option[OffsetDateTime],
     deaf: Boolean,
