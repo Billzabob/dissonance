@@ -3,7 +3,7 @@ package dissonance
 import cats.effect._
 import dissonance.Discord._
 import dissonance.model.embed.Embed
-import dissonance.model.Message
+import dissonance.model.message.Message
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.circe.CirceEntityCodec._
