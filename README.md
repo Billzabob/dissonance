@@ -1,4 +1,5 @@
-# Discord Framework in Scala
+# Dissonance
 
-A project to mess around with the Discord API and make a framework for it.
-Mostly just for practice and to learn.
+![Scala CI](https://github.com/Billzabob/discord/workflows/Scala%20CI/badge.svg)
+
+A Discord framework for Scala
