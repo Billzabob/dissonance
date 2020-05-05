@@ -15,9 +15,6 @@ import java.time.Instant
 sealed trait Event extends Product with Serializable
 
 object Event {
-  // TODO: Implement
-  type Snowflake = Long
-
   case class ChannelCreate(channel: Channel) extends Event
   case class ChannelDelete(channel: Channel) extends Event
   case class ChannelPinsUpdate(
@@ -113,7 +110,6 @@ object Event {
   implicit val messageDelete: Decoder[MessageDelete]                = deriveConfiguredDecoder
   implicit val messageDeleteBulk: Decoder[MessageDeleteBulk]        = deriveConfiguredDecoder
   implicit val messageReactionAdd: Decoder[MessageReactionAdd]      = deriveConfiguredDecoder
-  implicit val presenceUpdateDecoder: Decoder[PresenceUpdate]       = deriveConfiguredDecoder
   implicit val readyDecoder: Decoder[Ready]                         = deriveConfiguredDecoder
   implicit val typingStartDecoder: Decoder[TypingStart]             = deriveConfiguredDecoder
 

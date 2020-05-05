@@ -1,7 +1,6 @@
 package dissonance.model.channel
 
-import dissonance.model.Event.Snowflake
-import dissonance.model.Permission
+import dissonance.model.{Permission, Snowflake}
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._

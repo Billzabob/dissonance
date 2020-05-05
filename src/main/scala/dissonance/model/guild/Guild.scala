@@ -1,8 +1,7 @@
 package dissonance.model.guild
 
 import dissonance.model.channel.Channel
-import dissonance.model.Event.{PresenceUpdate, Snowflake}
-import dissonance.model.{Emoji, Permission}
+import dissonance.model.{Emoji, Permission, Presence, Snowflake}
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
@@ -42,7 +41,7 @@ case class Guild(
     voiceStates: List[VoiceState],
     members: List[Member],
     channels: List[Channel],
-    presences: List[PresenceUpdate],
+    presences: List[Presence],
     maxPresences: Option[Int],
     maxMembers: Option[Int],
     vanityUrlCode: Option[String],

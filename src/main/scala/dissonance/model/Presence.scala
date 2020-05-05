@@ -1,10 +1,9 @@
 package dissonance.model
 
 import dissonance.model.activity.Activity
-import dissonance.model.Event.Snowflake
-import dissonance.model.Presence._
+import dissonance.model.Snowflake
 import dissonance.model.user.User
-import io.circe.{Json, Decoder}
+import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import java.time.OffsetDateTime
@@ -22,9 +21,6 @@ case class Presence(
 )
 
 object Presence {
-  // TODO: Implement
-  type ClientStatus = Json
-
   implicit val config: Configuration              = Configuration.default.withSnakeCaseMemberNames
   implicit val presenceDecoder: Decoder[Presence] = deriveConfiguredDecoder
 }

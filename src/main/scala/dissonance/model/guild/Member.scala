@@ -1,6 +1,6 @@
 package dissonance.model.guild
 
-import dissonance.model.Event.Snowflake
+import dissonance.model.Snowflake
 import dissonance.model.user.User
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration
