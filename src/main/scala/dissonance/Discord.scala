@@ -84,30 +84,30 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       acks: Acks,
       sessionId: SessionId,
       connection: WSConnectionHighLevel[IO]
-  ): Stream[IO, Event] = event match {
-    case Hello(interval) =>
-      Stream.eval_(identifyOrResume(sessionId, sequenceNumber).flatMap(connection.send)) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
-    case HeartBeatAck =>
-      Stream.eval_(acks.enqueue1(()))
-    case Heartbeat(d) =>
-      Stream.eval_(putStrLn(s"Heartbeat received: $d"))
-    case Reconnect =>
-      Stream.raiseError[IO](ReconnectReceived)
-    case InvalidSession(resumable) =>
-      Stream.eval_(if (resumable) IO.unit else sessionId.set(none)) ++ Stream.sleep_(5.seconds) ++ Stream.raiseError[IO](SessionInvalid(resumable))
-    case Dispatch(nextSequenceNumber, event) =>
-      (event match {
-        case Ready(_, _, id, _) => Stream.eval_(sessionId.set(id.some))
-        case _                  => Stream.empty
-      }) ++ Stream.eval_(sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(event)
-  }
+  ): Stream[IO, Event] =
+    event match {
+      case Hello(interval) =>
+        Stream.eval_(identifyOrResume(sessionId, sequenceNumber).flatMap(connection.send)) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
+      case HeartBeatAck =>
+        Stream.eval_(acks.enqueue1(()))
+      case Heartbeat(d) =>
+        Stream.eval_(putStrLn(s"Heartbeat received: $d"))
+      case Reconnect =>
+        Stream.raiseError[IO](ReconnectReceived)
+      case InvalidSession(resumable) =>
+        Stream.eval_(if (resumable) IO.unit else sessionId.set(none)) ++ Stream.sleep_(5.seconds) ++ Stream.raiseError[IO](SessionInvalid(resumable))
+      case Dispatch(nextSequenceNumber, event) =>
+        (event match {
+          case Ready(_, _, id, _) => Stream.eval_(sessionId.set(id.some))
+          case _                  => Stream.empty
+        }) ++ Stream.eval_(sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(event)
+    }
 
-  private def identifyOrResume(sessionId: SessionId, sequenceNumber: SequenceNumber): IO[Text] = sessionId.get.flatMap {
-    case None =>
-      identityMessage.pure[IO]
-    case Some(id) =>
-      sequenceNumber.get.map(s => resumeMessage(id, s))
-  }
+  private def identifyOrResume(sessionId: SessionId, sequenceNumber: SequenceNumber): IO[Text] =
+    sessionId.get.flatMap {
+      case None     => identityMessage.pure[IO]
+      case Some(id) => sequenceNumber.get.map(s => resumeMessage(id, s))
+    }
 
   private def heartbeat(
       interval: FiniteDuration,

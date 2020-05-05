@@ -16,12 +16,12 @@ object utils {
   def javaClient: IO[HttpClient] =
     for {
       sslParams <- IO {
-                    // Need to user TLSv1.2 because the default of TLSv1.3 is bugged in JDK 11
-                    // See here: https://github.com/http4s/http4s-jdk-http-client/issues/200
-                    val params = javax.net.ssl.SSLContext.getDefault.getDefaultSSLParameters
-                    params.setProtocols(Array("TLSv1.2"))
-                    params
-                  }
+                     // Need to user TLSv1.2 because the default of TLSv1.3 is bugged in JDK 11
+                     // See here: https://github.com/http4s/http4s-jdk-http-client/issues/200
+                     val params = javax.net.ssl.SSLContext.getDefault.getDefaultSSLParameters
+                     params.setProtocols(Array("TLSv1.2"))
+                     params
+                   }
       javaClient <- IO(HttpClient.newBuilder.sslParameters(sslParams).build)
     } yield javaClient
 }

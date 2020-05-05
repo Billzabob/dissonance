@@ -38,20 +38,14 @@ object ControlMessage {
       result <- decodeOp(op, cursor)
     } yield result
 
-  def decodeOp(op: Int, data: HCursor): Decoder.Result[ControlMessage] = op match {
-    case 0 =>
-      data.as[Dispatch]
-    case 1 =>
-      data.get[Heartbeat]("d")
-    case 7 =>
-      Reconnect.asRight
-    case 9 =>
-      data.as[InvalidSession]
-    case 10 =>
-      data.get[Hello]("d")
-    case 11 =>
-      HeartBeatAck.asRight
-    case unknown =>
-      DecodingFailure(s"Unknown op code received: $unknown", data.history).asLeft
-  }
+  def decodeOp(op: Int, data: HCursor): Decoder.Result[ControlMessage] =
+    op match {
+      case 0       => data.as[Dispatch]
+      case 1       => data.get[Heartbeat]("d")
+      case 7       => Reconnect.asRight
+      case 9       => data.as[InvalidSession]
+      case 10      => data.get[Hello]("d")
+      case 11      => HeartBeatAck.asRight
+      case unknown => DecodingFailure(s"Unknown op code received: $unknown", data.history).asLeft
+    }
 }

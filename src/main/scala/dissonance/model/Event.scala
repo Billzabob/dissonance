@@ -99,80 +99,44 @@ object Event {
   implicit val voiceServerUpdateDecoder: Decoder[VoiceServerUpdate]            = deriveConfiguredDecoder
   implicit val webhookUpdateDecoder: Decoder[WebhookUpdate]                    = deriveConfiguredDecoder
 
-  def decodeEventName(eventName: String, data: ACursor): Decoder.Result[Event] = eventName match {
-    case "READY" =>
-      data.as[Ready]
-    case "RESUMED" =>
-      Resumed.asRight
-    case "CHANNEL_CREATE" =>
-      data.as[Channel].map(ChannelCreate)
-    case "CHANNEL_UPDATE" =>
-      data.as[Channel].map(ChannelUpdate)
-    case "CHANNEL_DELETE" =>
-      data.as[Channel].map(ChannelDelete)
-    case "CHANNEL_PINS_UPDATE" =>
-      data.as[ChannelPinsUpdate]
-    case "GUILD_CREATE" =>
-      data.as[Guild].map(GuildCreate)
-    case "GUILD_UPDATE" =>
-      data.as[Guild].map(GuildUpdate)
-    case "GUILD_DELETE" =>
-      data.as[Guild].map(GuildDelete)
-    case "GUILD_BAN_ADD" =>
-      data.as[guild.Ban].map(GuildBanAdd)
-    case "GUILD_BAN_REMOVE" =>
-      data.as[guild.Ban].map(GuildBanRemove)
-    case "GUILD_EMOJIS_UPDATE" =>
-      data.as[GuildEmojis]
-    case "GUILD_INTEGRATIONS_UPDATE" =>
-      data.as[GuildId]
-    case "GUILD_MEMBER_ADD" =>
-      (data.get[Snowflake]("guild_id"), data.as[guild.Member]).mapN(GuildMemberAdd)
-    case "GUILD_MEMBER_REMOVE" =>
-      data.as[GuildMemberRemove]
-    case "GUILD_MEMBER_UPDATE" =>
-      data.as[GuildMemberUpdate]
-    case "GUILD_MEMBERS_CHUNK" =>
-      data.as[GuildMembersChunk]
-    case "GUILD_ROLE_CREATE" =>
-      data.as[GuildRoleCreate]
-    case "GUILD_ROLE_UPDATE" =>
-      data.as[GuildRoleUpdate]
-    case "GUILD_ROLE_DELETE" =>
-      data.as[GuildRoleDelete]
-    case "INVITE_CREATE" =>
-      data.as[InviteCreate]
-    case "INVITE_DELETE" =>
-      data.as[InviteDelete]
-    case "MESSAGE_CREATE" =>
-      data.as[Message].map(MessageCreate)
-    case "MESSAGE_UPDATE" =>
-      data.as[Message].map(MessageUpdate)
-    case "MESSAGE_DELETE" =>
-      data.as[MessageDelete]
-    case "MESSAGE_DELETE_BULK" =>
-      data.as[MessageDeleteBulk]
-    case "MESSAGE_REACTION_ADD" =>
-      data.as[MessageReactionAdd]
-    case "MESSAGE_REACTION_REMOVE" =>
-      data.as[MessageReactionRemove]
-    case "MESSAGE_REACTION_REMOVE_ALL" =>
-      data.as[MessageReactionRemoveAll]
-    case "MESSAGE_REACTION_REMOVE_EMOJI" =>
-      data.as[MessageReactionRemoveEmoji]
-    case "PRESENCE_UPDATE" =>
-      data.as[Presence].map(PresenceUpdate)
-    case "TYPING_START" =>
-      data.as[TypingStart]
-    case "USER_UPDATE" =>
-      data.as[User].map(UserUpdate)
-    case "VOICE_STATE_UPDATE" =>
-      data.as[guild.VoiceState].map(VoiceStateUpdate)
-    case "VOICE_SERVER_UPDATE" =>
-      data.as[VoiceServerUpdate]
-    case "WEBHOOKS_UPDATE" =>
-      data.as[WebhookUpdate]
-    case unknown =>
-      DecodingFailure(s"Unknown event name received: $unknown", data.history).asLeft
-  }
+  def decodeEventName(eventName: String, data: ACursor): Decoder.Result[Event] =
+    eventName match {
+      case "READY"                         => data.as[Ready]
+      case "RESUMED"                       => Resumed.asRight
+      case "CHANNEL_CREATE"                => data.as[Channel].map(ChannelCreate)
+      case "CHANNEL_UPDATE"                => data.as[Channel].map(ChannelUpdate)
+      case "CHANNEL_DELETE"                => data.as[Channel].map(ChannelDelete)
+      case "CHANNEL_PINS_UPDATE"           => data.as[ChannelPinsUpdate]
+      case "GUILD_CREATE"                  => data.as[Guild].map(GuildCreate)
+      case "GUILD_UPDATE"                  => data.as[Guild].map(GuildUpdate)
+      case "GUILD_DELETE"                  => data.as[Guild].map(GuildDelete)
+      case "GUILD_BAN_ADD"                 => data.as[guild.Ban].map(GuildBanAdd)
+      case "GUILD_BAN_REMOVE"              => data.as[guild.Ban].map(GuildBanRemove)
+      case "GUILD_EMOJIS_UPDATE"           => data.as[GuildEmojis]
+      case "GUILD_INTEGRATIONS_UPDATE"     => data.as[GuildId]
+      case "GUILD_MEMBER_ADD"              => (data.get[Snowflake]("guild_id"), data.as[guild.Member]).mapN(GuildMemberAdd)
+      case "GUILD_MEMBER_REMOVE"           => data.as[GuildMemberRemove]
+      case "GUILD_MEMBER_UPDATE"           => data.as[GuildMemberUpdate]
+      case "GUILD_MEMBERS_CHUNK"           => data.as[GuildMembersChunk]
+      case "GUILD_ROLE_CREATE"             => data.as[GuildRoleCreate]
+      case "GUILD_ROLE_UPDATE"             => data.as[GuildRoleUpdate]
+      case "GUILD_ROLE_DELETE"             => data.as[GuildRoleDelete]
+      case "INVITE_CREATE"                 => data.as[InviteCreate]
+      case "INVITE_DELETE"                 => data.as[InviteDelete]
+      case "MESSAGE_CREATE"                => data.as[Message].map(MessageCreate)
+      case "MESSAGE_UPDATE"                => data.as[Message].map(MessageUpdate)
+      case "MESSAGE_DELETE"                => data.as[MessageDelete]
+      case "MESSAGE_DELETE_BULK"           => data.as[MessageDeleteBulk]
+      case "MESSAGE_REACTION_ADD"          => data.as[MessageReactionAdd]
+      case "MESSAGE_REACTION_REMOVE"       => data.as[MessageReactionRemove]
+      case "MESSAGE_REACTION_REMOVE_ALL"   => data.as[MessageReactionRemoveAll]
+      case "MESSAGE_REACTION_REMOVE_EMOJI" => data.as[MessageReactionRemoveEmoji]
+      case "PRESENCE_UPDATE"               => data.as[Presence].map(PresenceUpdate)
+      case "TYPING_START"                  => data.as[TypingStart]
+      case "USER_UPDATE"                   => data.as[User].map(UserUpdate)
+      case "VOICE_STATE_UPDATE"            => data.as[guild.VoiceState].map(VoiceStateUpdate)
+      case "VOICE_SERVER_UPDATE"           => data.as[VoiceServerUpdate]
+      case "WEBHOOKS_UPDATE"               => data.as[WebhookUpdate]
+      case unknown                         => DecodingFailure(s"Unknown event name received: $unknown", data.history).asLeft
+    }
 }
