@@ -1,11 +1,12 @@
 package dissonance.model.user
 
 import dissonance.model.BitFlag
+import enumeratum._
 import io.circe.Decoder
 
-sealed trait Role extends BitFlag with Product with Serializable
+sealed trait Role extends EnumEntry with BitFlag with Product with Serializable
 
-object Role {
+object Role extends Enum[Role] {
   case object DiscordEmployee      extends Role { val mask = 1 << 0  }
   case object DiscordPartner       extends Role { val mask = 1 << 1  }
   case object HypeSquadEvents      extends Role { val mask = 1 << 2  }
@@ -20,21 +21,7 @@ object Role {
   case object VerifiedBot          extends Role { val mask = 1 << 16 }
   case object VerifiedBotDeveloper extends Role { val mask = 1 << 17 }
 
-  val allRoles = List(
-    DiscordEmployee,
-    DiscordPartner,
-    HypeSquadEvents,
-    BugHunterLevel1,
-    HouseBravery,
-    HouseBrilliance,
-    HouseBalance,
-    EarlySupporter,
-    TeamUser,
-    System,
-    BugHunterLevel2,
-    VerifiedBot,
-    VerifiedBotDeveloper
-  )
+  val values = findValues
 
-  implicit val roleDecoder: Decoder[List[Role]] = BitFlag.decoder(allRoles)
+  implicit val roleDecoder: Decoder[List[Role]] = BitFlag.decoder(Role)
 }

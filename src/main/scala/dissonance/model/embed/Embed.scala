@@ -3,7 +3,7 @@ package dissonance.model.embed
 import cats.data.NonEmptyList
 import cats.implicits._
 import dissonance.model.Color
-import io.circe.Encoder
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import java.time.Instant
@@ -47,7 +47,7 @@ case class Embed(
 object Embed {
   def make = Embed(None, None, None, None, None, None, None, None, None, None, None, None, None)
 
-  implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
-  // implicit val embedDecoder: Decoder[Embed] = deriveConfiguredEncoder // TODO
+  implicit val config: Configuration        = Configuration.default.withSnakeCaseMemberNames
+  implicit val embedDecoder: Decoder[Embed] = deriveConfiguredDecoder
   implicit val embedEncoder: Encoder[Embed] = deriveConfiguredEncoder
 }

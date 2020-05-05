@@ -119,9 +119,9 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
     val heartbeats    = Stream.eval(sendHeartbeat) ++ Stream.repeatEval(sendHeartbeat).metered(interval)
 
     // TODO: Something besides true, false
-    (heartbeats.as(true) merge acks.dequeue.as(false)).sliding(2).map(_.toList).flatMap {
-      case List(true, true) => Stream.raiseError[IO](NoHeartbeatAck) // TODO: Terminate connection with non-1000 error code
-      case _                => Stream.emit(())
+    (heartbeats.as(true) merge acks.dequeue.as(false)).zipWithPrevious.flatMap {
+      case (Some(true), true) => Stream.raiseError[IO](NoHeartbeatAck)
+      case _                  => Stream.emit(())
     }
   }
 

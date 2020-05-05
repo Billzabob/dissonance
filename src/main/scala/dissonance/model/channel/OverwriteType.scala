@@ -1,16 +1,13 @@
 package dissonance.model.channel
 
-import io.circe.Decoder
+import enumeratum._
+import enumeratum.EnumEntry._
 
-sealed trait OverwriteType extends Product with Serializable
+sealed trait OverwriteType extends EnumEntry with Uncapitalised with Product with Serializable
 
-object OverwriteType {
+object OverwriteType extends Enum[OverwriteType] with CirceEnum[OverwriteType] {
   case object Role   extends OverwriteType
   case object Member extends OverwriteType
 
-  implicit val channelTypeDecoder: Decoder[OverwriteType] = Decoder[String].emap {
-    case "role"   => Right(Role)
-    case "member" => Right(Member)
-    case other    => Left(s"Unknown overwrite type: $other")
-  }
+  val values = findValues
 }

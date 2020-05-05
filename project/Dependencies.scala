@@ -11,6 +11,7 @@ object Dependencies {
     val refined         = "0.9.14"
     val scalaTest       = "3.1.1"
     val catsEffect      = "2.1.3"
+    val enumeratum      = "1.6.0"
     val websocketClient = "0.3.0"
   }
 
@@ -22,6 +23,7 @@ object Dependencies {
     val newtype         = "io.estatico" %% "newtype" % Versions.newtype
     val refined         = "eu.timepit" %% "refined" % Versions.refined
     val catsEffect      = "org.typelevel" %% "cats-effect" % Versions.catsEffect
+    val enumeratum      = Seq("enumeratum", "enumeratum-circe").map("com.beachape" %% _ % Versions.enumeratum)
     val websocketClient = "org.http4s" %% "http4s-jdk-http-client" % Versions.websocketClient
   }
 
@@ -41,5 +43,5 @@ object Dependencies {
     scalaTest,
     catsEffect,
     websocketClient,
-  ) ++ circe
+  ) ++ enumeratum ++ circe
 }
