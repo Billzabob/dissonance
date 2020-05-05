@@ -5,6 +5,7 @@ import dissonance.model._
 import dissonance.model.channel.Channel
 import dissonance.model.guild.Guild
 import dissonance.model.message.Message
+import dissonance.model.presence.Presence
 import dissonance.model.user.User
 import io.circe._
 import io.circe.generic.extras.Configuration

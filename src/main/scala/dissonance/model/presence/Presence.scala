@@ -1,4 +1,4 @@
-package dissonance.model
+package dissonance.model.presence
 
 import dissonance.model.activity.Activity
 import dissonance.model.Snowflake

@@ -1,7 +1,8 @@
 package dissonance.model.guild
 
+import dissonance.model.{Emoji, Permission, Snowflake}
 import dissonance.model.channel.Channel
-import dissonance.model.{Emoji, Permission, Presence, Snowflake}
+import dissonance.model.presence.Presence
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
