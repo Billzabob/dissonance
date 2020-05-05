@@ -1,7 +1,6 @@
 package dissonance.model
 
 import cats.implicits._
-import dissonance.model.Event
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._

@@ -1,6 +1,5 @@
 package dissonance.model
 
-import dissonance.model.BitFlag
 import enumeratum._
 import io.circe.Decoder
 

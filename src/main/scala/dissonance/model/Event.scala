@@ -1,7 +1,6 @@
 package dissonance.model
 
 import cats.implicits._
-import dissonance.model._
 import dissonance.model.channel.Channel
 import dissonance.model.guild.Guild
 import dissonance.model.message.Message
