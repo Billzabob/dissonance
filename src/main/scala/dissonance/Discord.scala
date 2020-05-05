@@ -5,9 +5,10 @@ import cats.effect.concurrent._
 import cats.implicits._
 import dissonance.Discord._
 import dissonance.model._
-import dissonance.model.Event._
-import dissonance.model.Errors._
 import dissonance.model.ControlMessage._
+import dissonance.model.Errors._
+import dissonance.model.Event._
+import dissonance.model.gateway._
 import dissonance.utils._
 import fs2.concurrent.Queue
 import fs2.Stream

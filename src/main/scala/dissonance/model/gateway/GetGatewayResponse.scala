@@ -1,4 +1,4 @@
-package dissonance.model
+package dissonance.model.gateway
 
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration
