@@ -1,15 +1,40 @@
 package dissonance.model.message
 
-import io.circe.Decoder
+import dissonance.model.channel
+// import dissonance.model.embed.Embed
+import dissonance.model.guild
+import dissonance.model.Snowflake
+import dissonance.model.user.User
+import io.circe.{Decoder, Json}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
-import dissonance.model.user.User
+import java.time.OffsetDateTime
 
-// TODO: Lots more fields
 case class Message(
+    id: Snowflake,
+    channelId: Snowflake,
+    guildId: Option[Snowflake],
+    author: User,
+    member: Option[guild.Member],
     content: String,
-    channelId: String,
-    author: User
+    timestamp: OffsetDateTime,
+    editedTimestamp: Option[OffsetDateTime],
+    tts: Boolean,
+    mentionEveryone: Boolean,
+    mentions: List[Json], // TODO
+    mentionRoles: List[Snowflake],
+    mentionChannels: Option[List[channel.Mention]],
+    attachments: List[Attachment],
+    // embeds: List[Embed],
+    reactions: Option[List[Reaction]],
+    nonce: Option[String],
+    pinned: Boolean,
+    webhookId: Option[Snowflake],
+    `type`: MessageType,
+    activity: Option[Activity],
+    application: Option[Application],
+    messageReference: Option[Reference],
+    flags: Option[List[MessageFlag]]
 )
 
 object Message {

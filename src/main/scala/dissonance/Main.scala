@@ -3,7 +3,7 @@ package dissonance
 import cats.effect.{ExitCode, IO, IOApp}
 import dissonance.model.Event
 import dissonance.model.Event.MessageCreate
-import dissonance.model.message.Message
+import dissonance.model.message.BasicMessage
 
 object Main extends IOApp {
 
@@ -13,7 +13,7 @@ object Main extends IOApp {
   }
 
   def handleEvents(discordClient: DiscordClient): Event => IO[Unit] = {
-    case MessageCreate(Message("ping", channelId, _)) => discordClient.sendMessage("pong", channelId).void
-    case _                                            => IO.unit
+    case MessageCreate(BasicMessage("ping", _, channelId)) => discordClient.sendMessage("pong", channelId).void
+    case _                                                 => IO.unit
   }
 }

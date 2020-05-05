@@ -4,6 +4,7 @@ import cats.effect._
 import dissonance.Discord._
 import dissonance.model.embed.Embed
 import dissonance.model.message.Message
+import dissonance.model.Snowflake
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.circe.CirceEntityCodec._
@@ -14,7 +15,7 @@ import org.http4s.Method._
 
 class DiscordClient(token: String, client: Client[IO]) {
 
-  def sendMessage(message: String, channelId: String, tts: Boolean = false): IO[Message] =
+  def sendMessage(message: String, channelId: Snowflake, tts: Boolean = false): IO[Message] =
     client
       .expect[Message](
         POST(
@@ -28,7 +29,7 @@ class DiscordClient(token: String, client: Client[IO]) {
         )
       )
 
-  def sendEmbed(embed: Embed, channelId: String): IO[Message] =
+  def sendEmbed(embed: Embed, channelId: Snowflake): IO[Message] =
     client
       .expect[Message](
         POST(

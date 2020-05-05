@@ -99,8 +99,6 @@ object Event {
   implicit val voiceServerUpdateDecoder: Decoder[VoiceServerUpdate]            = deriveConfiguredDecoder
   implicit val webhookUpdateDecoder: Decoder[WebhookUpdate]                    = deriveConfiguredDecoder
 
-  // TODO: Finish implementing all the events:
-  // https://discordapp.com/developers/docs/topics/gateway#commands-and-events-gateway-events
   def decodeEventName(eventName: String, data: ACursor): Decoder.Result[Event] = eventName match {
     case "READY" =>
       data.as[Ready]

@@ -47,6 +47,7 @@ case class Embed(
 object Embed {
   def make = Embed(None, None, None, None, None, None, None, None, None, None, None, None, None)
 
-  implicit val config: Configuration        = Configuration.default.withSnakeCaseMemberNames
+  implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
+  // implicit val embedDecoder: Decoder[Embed] = deriveConfiguredEncoder // TODO
   implicit val embedEncoder: Encoder[Embed] = deriveConfiguredEncoder
 }
