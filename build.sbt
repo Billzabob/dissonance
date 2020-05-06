@@ -7,11 +7,18 @@ ThisBuild / organizationName := "snac"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val root = (project in file("."))
+lazy val core = (project in file("."))
   .settings(
     name := "dissonance",
-    libraryDependencies ++= dependencies,
-    scalacOptions += "-Ymacro-annotations"
+    scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, n)) if n >= 13 => Seq("-Ymacro-annotations")
+      case _                       => Nil
+    }),
+    crossScalaVersions := List("2.13.2", "2.12.11"),
+    libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, v)) if v <= 12 => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
+      case _                       => Nil
+    }) ++ dependencies
   )
 
 addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1")
