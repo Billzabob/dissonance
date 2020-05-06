@@ -1,6 +1,6 @@
 package dissonance.model.activity
 
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 
 sealed trait ActivityType extends Product with Serializable
 
@@ -16,5 +16,12 @@ object ActivityType {
     case 2     => Right(Listening)
     case 4     => Right(Custom)
     case other => Left(s"Unknown activity type ID: $other")
+  }
+
+  implicit val activityTypeEncoder: Encoder[ActivityType] = Encoder[Int].contramap {
+    case Game      => 0
+    case Streaming => 1
+    case Listening => 2
+    case Custom    => 4
   }
 }
