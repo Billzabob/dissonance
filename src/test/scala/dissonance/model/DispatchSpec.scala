@@ -27,7 +27,6 @@ class DispatchSpec extends AnyFlatSpec with Matchers {
     // PRESENCE_UPDATE
     // USER_UPDATE
     // VOICE_SERVER_UPDATE
-    // WEBHOOKS_UPDATE
 
     val rawJson = readFileFromResource("/models/events.ndjson").unsafeRunSync()
 
