@@ -14,7 +14,7 @@ object ActivityFlag extends Enum[ActivityFlag] {
   case object Sync        extends ActivityFlag { val mask = 1 << 4 }
   case object Play        extends ActivityFlag { val mask = 1 << 5 }
 
-  val values: IndexedSeq[ActivityFlag] = findValues
+  val values = findValues
 
   implicit val decoder: Decoder[List[ActivityFlag]] = BitFlag.decoder(ActivityFlag)
   implicit val encoder: Encoder[List[ActivityFlag]] = BitFlag.encoder

@@ -12,5 +12,5 @@ object Status extends Enum[Status] with CirceEnum[Status] {
   case object Invisible extends Status
   case object Offline   extends Status
 
-  val values: IndexedSeq[Status] = findValues
+  val values = findValues
 }

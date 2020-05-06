@@ -24,7 +24,7 @@ object Intent extends Enum[Intent] {
   case object DirectMessageReactions extends Intent { val mask: Int = 1 << 13 }
   case object DirectMessageTyping    extends Intent { val mask: Int = 1 << 14 }
 
-  val values: IndexedSeq[Intent] = findValues
+  val values = findValues
 
   implicit val encoder: Encoder[List[Intent]] = BitFlag.encoder
 }
