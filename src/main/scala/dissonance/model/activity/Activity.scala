@@ -1,12 +1,12 @@
 package dissonance.model.activity
 
 import dissonance.model.{Emoji, Snowflake}
-import io.circe.Decoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
+import io.circe.{Decoder, Encoder}
 import java.time.Instant
-import org.http4s.circe._
 import org.http4s.Uri
+import org.http4s.circe._
 
 case class Activity(
     name: String,
@@ -28,4 +28,5 @@ case class Activity(
 object Activity {
   implicit val config: Configuration              = Configuration.default.withSnakeCaseMemberNames
   implicit val activityDecoder: Decoder[Activity] = deriveConfiguredDecoder
+  implicit val activityEncoder: Encoder[Activity] = deriveConfiguredEncoder
 }
