@@ -31,7 +31,6 @@ class UserSpec extends AnyFlatSpec with Matchers {
   )
 
   "a partial user json" should "be parsed correctly" in {
-
     val rawJson = readFileFromResource("/models/partialUser.json").unsafeRunSync()
 
     val expectedUser = baseUser
