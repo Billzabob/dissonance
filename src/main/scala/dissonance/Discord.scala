@@ -141,7 +141,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
           "op" -> 2.asJson,
           "d"  -> Identify(token, IdentifyConnectionProperties("", "", ""), None, None, None, None, None, intents).asJson
         )
-        .spaces2SortKeys
+        .noSpaces
     )
 
   private def resumeMessage(sessionId: String, sequenceNumber: Option[Int]) =
