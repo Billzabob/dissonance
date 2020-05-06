@@ -1,11 +1,11 @@
 package dissonance.model
 
-import dissonance.model.BitFlag
+import enumeratum._
 import io.circe.Decoder
 
-sealed trait Permission extends BitFlag with Product with Serializable
+sealed trait Permission extends EnumEntry with BitFlag with Product with Serializable
 
-object Permission {
+object Permission extends Enum[Permission] {
   case object CreateInstantInvite extends Permission { val mask = 1 << 0  }
   case object KickMembers         extends Permission { val mask = 1 << 1  }
   case object BanMembers          extends Permission { val mask = 1 << 2  }
@@ -38,39 +38,7 @@ object Permission {
   case object ManageWebhooks      extends Permission { val mask = 1 << 29 }
   case object ManageEmojis        extends Permission { val mask = 1 << 30 }
 
-  val allFlags = List(
-    CreateInstantInvite,
-    KickMembers,
-    BanMembers,
-    Administrator,
-    ManageChannels,
-    ManageGuild,
-    AddReactions,
-    ViewAuditLog,
-    PrioritySpeaker,
-    Stream,
-    ViewChannel,
-    SendMessages,
-    SendTtsMessages,
-    ManageMessages,
-    EmbedLinks,
-    AttachFiles,
-    ReadMessageHistory,
-    MentionEveryone,
-    UseExternalEmojis,
-    ViewGuildInsights,
-    Connect,
-    Speak,
-    MuteMembers,
-    DeafenMembers,
-    MoveMembers,
-    UseVad,
-    ChangeNickname,
-    ManageNicknames,
-    ManageRoles,
-    ManageWebhooks,
-    ManageEmojis
-  )
+  val values = findValues
 
-  implicit val decoder: Decoder[List[Permission]] = BitFlag.decoder(allFlags)
+  implicit val decoder: Decoder[List[Permission]] = BitFlag.decoder(Permission)
 }

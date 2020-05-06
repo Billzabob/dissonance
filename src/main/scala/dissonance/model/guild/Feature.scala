@@ -1,11 +1,11 @@
 package dissonance.model.guild
 
-import io.circe.Decoder
-import io.circe.generic.extras.Configuration
+import enumeratum._
+import enumeratum.EnumEntry._
 
-sealed trait Feature extends Product with Serializable
+sealed trait Feature extends EnumEntry with UpperSnakecase with Product with Serializable
 
-object Feature {
+object Feature extends Enum[Feature] with CirceEnum[Feature] {
   case object InviteSplash         extends Feature
   case object VipRegions           extends Feature
   case object VanityUrl            extends Feature
@@ -21,22 +21,5 @@ object Feature {
   case object PublicDisabled       extends Feature
   case object WelcomeScreenEnabled extends Feature
 
-  implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
-  implicit val featureDecoder: Decoder[Feature] = Decoder[String].emap {
-    case "INVITE_SPLASH"          => Right(InviteSplash)
-    case "VIP_REGIONS"            => Right(VipRegions)
-    case "VANITY_URL"             => Right(VanityUrl)
-    case "VERIFIED"               => Right(Verified)
-    case "PARTNERED"              => Right(Partnered)
-    case "PUBLIC"                 => Right(Public)
-    case "COMMERCE"               => Right(Commerce)
-    case "NEWS"                   => Right(News)
-    case "DISCOVERABLE"           => Right(Discoverable)
-    case "FEATURABLE"             => Right(Featurable)
-    case "ANIMATED_ICON"          => Right(AnimatedIcon)
-    case "BANNER"                 => Right(Banner)
-    case "PUBLIC_DISABLED"        => Right(PublicDisabled)
-    case "WELCOME_SCREEN_ENABLED" => Right(WelcomeScreenEnabled)
-    case other                    => Left(s"Unknown feature type: $other")
-  }
+  val values = findValues
 }

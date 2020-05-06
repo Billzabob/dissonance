@@ -1,11 +1,12 @@
 package dissonance.model.activity
 
 import dissonance.model.BitFlag
+import enumeratum._
 import io.circe.Decoder
 
-sealed trait ActivityFlag extends BitFlag with Product with Serializable
+sealed trait ActivityFlag extends EnumEntry with BitFlag with Product with Serializable
 
-object ActivityFlag {
+object ActivityFlag extends Enum[ActivityFlag] {
   case object Instance    extends ActivityFlag { val mask = 1 << 0 }
   case object Join        extends ActivityFlag { val mask = 1 << 1 }
   case object Spectate    extends ActivityFlag { val mask = 1 << 2 }
@@ -13,7 +14,7 @@ object ActivityFlag {
   case object Sync        extends ActivityFlag { val mask = 1 << 4 }
   case object Play        extends ActivityFlag { val mask = 1 << 5 }
 
-  val allFlags = List(Instance, Join, Spectate, JoinRequest, Sync, Play)
+  val values = findValues
 
-  implicit val decoder: Decoder[List[ActivityFlag]] = BitFlag.decoder(allFlags)
+  implicit val decoder: Decoder[List[ActivityFlag]] = BitFlag.decoder(ActivityFlag)
 }

@@ -1,7 +1,7 @@
 package dissonance.model.message
 
 import dissonance.model.channel
-// import dissonance.model.embed.Embed
+import dissonance.model.embed.Embed
 import dissonance.model.guild
 import dissonance.model.Snowflake
 import dissonance.model.user.User
@@ -25,7 +25,7 @@ case class Message(
     mentionRoles: List[Snowflake],
     mentionChannels: Option[List[channel.Mention]],
     attachments: List[Attachment],
-    // embeds: List[Embed],
+    embeds: List[Embed],
     reactions: Option[List[Reaction]],
     nonce: Option[String],
     pinned: Boolean,
