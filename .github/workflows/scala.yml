@@ -22,4 +22,4 @@ jobs:
     - name: Check formatting
       run: sbt scalafmtCheckAll
     - name: Upload coverage
-      run: bash <(curl -s https://codecov.io/bash)
+      uses: codecov/codecov-action@v1
