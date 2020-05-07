@@ -1,4 +1,4 @@
-name: Scala CI
+name: build
 
 on:
   push:
@@ -18,4 +18,8 @@ jobs:
       with:
         java-version: 11
     - name: Run tests
-      run: sbt +test scalafmtCheckAll
+      run: sbt clean coverage +test coverageReport scalafmtCheckAll
+    - name: Check formatting
+      run: sbt scalafmtCheckAll
+    - name: Upload coverage
+      run: bash <(curl -s https://codecov.io/bash)
