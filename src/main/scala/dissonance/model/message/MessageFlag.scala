@@ -2,7 +2,7 @@ package dissonance.model.message
 
 import dissonance.model.BitFlag
 import enumeratum._
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 
 sealed trait MessageFlag extends EnumEntry with BitFlag with Product with Serializable
 
@@ -15,5 +15,6 @@ object MessageFlag extends Enum[MessageFlag] {
 
   val values = findValues
 
-  implicit val decoder: Decoder[List[MessageFlag]] = BitFlag.decoder(MessageFlag)
+  implicit val messageFlagDecoder: Decoder[List[MessageFlag]] = BitFlag.decoder(MessageFlag)
+  implicit val messageFlagEncoder: Encoder[List[MessageFlag]] = BitFlag.encoder
 }

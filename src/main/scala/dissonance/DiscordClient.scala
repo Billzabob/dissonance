@@ -1,44 +1,12 @@
 package dissonance
 
 import cats.effect._
-import dissonance.Discord._
-import dissonance.model.embed.Embed
-import dissonance.model.message.Message
-import dissonance.model.Snowflake
-import io.circe.Json
-import io.circe.syntax._
-import org.http4s.circe.CirceEntityCodec._
+import dissonance.client._
 import org.http4s.client.Client
-import org.http4s.client.dsl.io._
 import org.http4s.client.jdkhttpclient.JdkHttpClient
-import org.http4s.Method._
 
 class DiscordClient(token: String, client: Client[IO]) {
-
-  def sendMessage(message: String, channelId: Snowflake, tts: Boolean = false): IO[Message] =
-    client
-      .expect[Message](
-        POST(
-          // TODO Case class here
-          Json.obj(
-            "content" -> message.asJson,
-            "tts"     -> tts.asJson
-          ),
-          apiEndpoint.addPath(s"channels/$channelId/messages"),
-          headers(token)
-        )
-      )
-
-  def sendEmbed(embed: Embed, channelId: Snowflake): IO[Message] =
-    client
-      .expect[Message](
-        POST(
-          // TODO Case class here
-          Json.obj("embed" -> embed.asJson),
-          apiEndpoint.addPath(s"channels/$channelId/messages"),
-          headers(token)
-        )
-      )
+  val channel = new ChannelClient(token, client)
 }
 
 object DiscordClient {

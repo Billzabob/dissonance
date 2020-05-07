@@ -14,7 +14,7 @@ object Main extends IOApp {
   }
 
   def handleEvents(discordClient: DiscordClient): Event => IO[Unit] = {
-    case MessageCreate(BasicMessage("ping", _, channelId)) => discordClient.sendMessage("pong", channelId).void
+    case MessageCreate(BasicMessage("ping", _, channelId)) => discordClient.channel.sendMessage("pong", channelId).void
     case _                                                 => IO.unit
   }
 }
