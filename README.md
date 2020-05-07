@@ -1,5 +1,7 @@
 # Dissonance
 
-![Scala CI](https://github.com/Billzabob/discord/workflows/Scala%20CI/badge.svg)
+[![](https://github.com/Billzabob/discord/workflows/build/badge.svg)](https://github.com/Billzabob/dissonance)
+[![](https://img.shields.io/discord/390751088829005826.svg?style=flat-square)](https://discordapp.com/invite/JXt4Zd)
+
 
 A Discord framework for Scala
