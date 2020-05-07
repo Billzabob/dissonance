@@ -1,18 +1,30 @@
 package dissonance.model.user
 
-import io.circe.Decoder
+import cats.implicits._
+import enumeratum._
+import io.circe.{Decoder, Encoder}
 
-sealed trait PremiumType extends Product with Serializable
+sealed trait PremiumType extends EnumEntry with Product with Serializable
 
-object PremiumType {
+object PremiumType extends Enum[PremiumType] {
   case object None         extends PremiumType
   case object NitroClassic extends PremiumType
   case object Nitro        extends PremiumType
 
-  implicit val premiumTypeDecoder: Decoder[PremiumType] = Decoder[Int].emap {
-    case 0     => Right(None)
-    case 1     => Right(NitroClassic)
-    case 2     => Right(Nitro)
-    case other => Left(s"Unknown premium type ID: $other")
+  val values = findValues
+
+  private val premiumTypeCode: PremiumType => Int = {
+    case None         => 0
+    case NitroClassic => 1
+    case Nitro        => 2
   }
+
+  implicit val premiumTypeDecoder: Decoder[PremiumType] = Decoder[Int].emap { input =>
+    Either.fromOption(
+      values.find(premiumTypeCode(_) == input),
+      s"Unknown premium type ID: $input"
+    )
+  }
+
+  implicit val premiumTypeEncoder: Encoder[PremiumType] = Encoder[Int].contramap(premiumTypeCode)
 }

@@ -2,11 +2,10 @@ package dissonance.model.embed
 
 import cats.data.NonEmptyList
 import cats.implicits._
-import dissonance.model.Color
+import dissonance.model.{Color, Timestamp}
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
-import java.time.Instant
 import org.http4s.circe._
 import org.http4s.Uri
 
@@ -15,7 +14,7 @@ case class Embed(
     `type`: Option[EmbedType],
     description: Option[String],
     url: Option[Uri],
-    timestamp: Option[Instant],
+    timestamp: Option[Timestamp],
     color: Option[Color],
     footer: Option[Footer],
     image: Option[Image],
@@ -29,7 +28,7 @@ case class Embed(
   def withType(`type`: EmbedType)          = copy(`type` = `type`.some)
   def withDescription(description: String) = copy(description = description.some)
   def withUrl(url: Uri)                    = copy(url = url.some)
-  def withTimestamp(timestamp: Instant)    = copy(timestamp = timestamp.some)
+  def withTimestamp(timestamp: Timestamp)  = copy(timestamp = timestamp.some)
   def withColor(color: Color)              = copy(color = color.some)
   def withFooter(footer: Footer)           = copy(footer = footer.some)
   def withImage(image: Image)              = copy(image = image.some)

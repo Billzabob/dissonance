@@ -1,7 +1,7 @@
 package dissonance.model.user
 
 import dissonance.model.DiscordId
-import io.circe._
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 
@@ -22,7 +22,7 @@ case class User(
 )
 
 object User {
-  implicit val config: Configuration         = Configuration.default.withSnakeCaseMemberNames
-  implicit val idDecoder: Decoder[DiscordId] = Decoder[Long].map(DiscordId.apply)
-  implicit val userDecoder: Decoder[User]    = deriveConfiguredDecoder
+  implicit val config: Configuration      = Configuration.default.withSnakeCaseMemberNames
+  implicit val userDecoder: Decoder[User] = deriveConfiguredDecoder
+  implicit val userEncoder: Encoder[User] = deriveConfiguredEncoder
 }

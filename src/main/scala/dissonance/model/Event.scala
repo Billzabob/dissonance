@@ -10,24 +10,23 @@ import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import java.time.OffsetDateTime
-import java.time.Instant
 import org.http4s.circe._
 import org.http4s.Uri
 
 sealed trait Event extends Product with Serializable
 
 object Event {
-  case class ChannelCreate(channel: Channel)                                                               extends Event
-  case class ChannelDelete(channel: Channel)                                                               extends Event
-  case class ChannelPinsUpdate(guildId: Snowflake, channelId: Snowflake, lastPinTimestamp: OffsetDateTime) extends Event
-  case class ChannelUpdate(channel: Channel)                                                               extends Event
-  case class GuildBanAdd(guildBan: guild.Ban)                                                              extends Event
-  case class GuildBanRemove(guildBan: guild.Ban)                                                           extends Event
-  case class GuildCreate(guild: Guild)                                                                     extends Event
-  case class GuildDelete(guild: Guild)                                                                     extends Event
-  case class GuildEmojis(guildId: Snowflake, emojis: List[Emoji])                                          extends Event
-  case class GuildId(guildId: Snowflake)                                                                   extends Event
-  case class GuildMemberAdd(guildId: Snowflake, member: guild.Member)                                      extends Event
+  case class ChannelCreate(channel: Channel)                                                                       extends Event
+  case class ChannelDelete(channel: Channel)                                                                       extends Event
+  case class ChannelPinsUpdate(guildId: Snowflake, channelId: Snowflake, lastPinTimestamp: Option[OffsetDateTime]) extends Event
+  case class ChannelUpdate(channel: Channel)                                                                       extends Event
+  case class GuildBanAdd(guildBan: guild.Ban)                                                                      extends Event
+  case class GuildBanRemove(guildBan: guild.Ban)                                                                   extends Event
+  case class GuildCreate(guild: Guild)                                                                             extends Event
+  case class GuildDelete(guild: Guild)                                                                             extends Event
+  case class GuildEmojisUpdate(guildId: Snowflake, emojis: List[Emoji])                                            extends Event
+  case class GuildId(guildId: Snowflake)                                                                           extends Event
+  case class GuildMemberAdd(guildId: Snowflake, member: guild.Member)                                              extends Event
   case class GuildMembersChunk(
       guildId: Snowflake,
       members: List[guild.Member],
@@ -46,7 +45,7 @@ object Event {
   case class InviteCreate(
       channelId: Snowflake,
       code: String,
-      createdAt: Instant,
+      createdAt: Timestamp,
       guildId: Option[Snowflake],
       inviter: Option[User],
       maxAge: Int, // TODO: This is in seconds, so convert to Duration?
@@ -68,7 +67,7 @@ object Event {
   case class PresenceUpdate(presence: Presence)                                                                                                                        extends Event
   case class Ready(v: Integer, user: User, sessionId: String, shard: Option[(Int, Int)])                                                                               extends Event // TODO: Parse the 2 element array into a case class instead of tuple
   case object Resumed                                                                                                                                                  extends Event
-  case class TypingStart(channelId: Snowflake, guildId: Option[Snowflake], userId: Snowflake, timestamp: Instant, member: Option[guild.Member])                        extends Event
+  case class TypingStart(channelId: Snowflake, guildId: Option[Snowflake], userId: Snowflake, timestamp: Timestamp, member: Option[guild.Member])                      extends Event
   case class UserUpdate(user: User)                                                                                                                                    extends Event
   case class VoiceStateUpdate(voiceState: guild.VoiceState)                                                                                                            extends Event
   case class VoiceServerUpdate(token: String, guildId: Snowflake, endpoint: Uri)                                                                                       extends Event
@@ -77,7 +76,7 @@ object Event {
   implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
 
   implicit val channelPinsUpdateDecoder: Decoder[ChannelPinsUpdate]            = deriveConfiguredDecoder
-  implicit val guildEmojisDecoder: Decoder[GuildEmojis]                        = deriveConfiguredDecoder
+  implicit val guildEmojisDecoder: Decoder[GuildEmojisUpdate]                  = deriveConfiguredDecoder
   implicit val guildIdDecoder: Decoder[GuildId]                                = deriveConfiguredDecoder
   implicit val guildMemberRemoveDecoder: Decoder[GuildMemberRemove]            = deriveConfiguredDecoder
   implicit val guildMembersChunkDecoder: Decoder[GuildMembersChunk]            = deriveConfiguredDecoder
@@ -111,7 +110,7 @@ object Event {
       case "GUILD_DELETE"                  => data.as[Guild].map(GuildDelete)
       case "GUILD_BAN_ADD"                 => data.as[guild.Ban].map(GuildBanAdd)
       case "GUILD_BAN_REMOVE"              => data.as[guild.Ban].map(GuildBanRemove)
-      case "GUILD_EMOJIS_UPDATE"           => data.as[GuildEmojis]
+      case "GUILD_EMOJIS_UPDATE"           => data.as[GuildEmojisUpdate]
       case "GUILD_INTEGRATIONS_UPDATE"     => data.as[GuildId]
       case "GUILD_MEMBER_ADD"              => (data.get[Snowflake]("guild_id"), data.as[guild.Member]).mapN(GuildMemberAdd)
       case "GUILD_MEMBER_REMOVE"           => data.as[GuildMemberRemove]

@@ -31,7 +31,7 @@ class UserSpec extends AnyFlatSpec with Matchers {
   )
 
   "a partial user json" should "be parsed correctly" in {
-    val rawJson = readFileFromResource("/models/partialUser.json").unsafeRunSync()
+    val rawJson = readFileFromResource("/models/partialUser.json").unsafeRunSync().mkString("\n")
 
     val expectedUser = baseUser
 
@@ -39,7 +39,7 @@ class UserSpec extends AnyFlatSpec with Matchers {
   }
 
   "a full user json" should "be parsed correctly" in {
-    val rawJson = readFileFromResource("/models/fullUser.json").unsafeRunSync()
+    val rawJson = readFileFromResource("/models/fullUser.json").unsafeRunSync().mkString("\n")
 
     val expectedUser = baseUser.copy(
       bot = false.some,
