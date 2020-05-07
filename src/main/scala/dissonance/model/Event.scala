@@ -63,9 +63,9 @@ object Event {
   case class MessageReactionRemove(userId: Snowflake, channelId: Snowflake, messageId: Snowflake, guildId: Option[Snowflake], emoji: Emoji)                            extends Event
   case class MessageReactionRemoveAll(channelId: Snowflake, messageId: Snowflake, guildId: Option[Snowflake])                                                          extends Event
   case class MessageReactionRemoveEmoji(channelId: Snowflake, messageId: Snowflake, guildId: Option[Snowflake], emoji: Emoji)                                          extends Event
-  case class MessageUpdate(message: Message)                                                                                                                           extends Event // TODO: Probably won't work since inner message for Update might only have id and channelId.
+  case class MessageUpdate(message: Message)                                                                                                                           extends Event
   case class PresenceUpdate(presence: Presence)                                                                                                                        extends Event
-  case class Ready(v: Integer, user: User, sessionId: String, shard: Option[(Int, Int)])                                                                               extends Event // TODO: Parse the 2 element array into a case class instead of tuple
+  case class Ready(v: Integer, user: User, sessionId: String, shard: Option[Shard])                                                                                    extends Event
   case object Resumed                                                                                                                                                  extends Event
   case class TypingStart(channelId: Snowflake, guildId: Option[Snowflake], userId: Snowflake, timestamp: Timestamp, member: Option[guild.Member])                      extends Event
   case class UserUpdate(user: User)                                                                                                                                    extends Event
