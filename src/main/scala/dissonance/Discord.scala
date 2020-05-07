@@ -42,7 +42,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
     val sessionId      = Ref[IO].of(none[String])
     val acks           = Queue.unbounded[IO, Unit]
 
-    Stream.eval((getUri, sequenceNumber, sessionId, acks).mapN(processEvents(intents))).flatten
+    Stream.force((getUri, sequenceNumber, sessionId, acks).mapN(processEvents(intents)))
   }
 
   private def getUri: IO[Uri] =
