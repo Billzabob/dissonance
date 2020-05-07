@@ -1,7 +1,7 @@
 package dissonance.model
 
 import dissonance.model.user.User
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 
@@ -19,4 +19,5 @@ case class Emoji(
 object Emoji {
   implicit val config: Configuration        = Configuration.default.withSnakeCaseMemberNames
   implicit val emojiDecoder: Decoder[Emoji] = deriveConfiguredDecoder
+  implicit val emojiEncoder: Encoder[Emoji] = deriveConfiguredEncoder
 }

@@ -1,7 +1,7 @@
 package dissonance.model
 
 import enumeratum._
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 
 sealed trait Permission extends EnumEntry with BitFlag with Product with Serializable
 
@@ -40,5 +40,6 @@ object Permission extends Enum[Permission] {
 
   val values = findValues
 
-  implicit val decoder: Decoder[List[Permission]] = BitFlag.decoder(Permission)
+  implicit val permissionDecoder: Decoder[List[Permission]] = BitFlag.decoder(Permission)
+  implicit val permissionEncoder: Encoder[List[Permission]] = BitFlag.encoder
 }

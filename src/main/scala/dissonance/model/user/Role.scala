@@ -2,7 +2,7 @@ package dissonance.model.user
 
 import dissonance.model.BitFlag
 import enumeratum._
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 
 sealed trait Role extends EnumEntry with BitFlag with Product with Serializable
 
@@ -24,4 +24,5 @@ object Role extends Enum[Role] {
   val values = findValues
 
   implicit val roleDecoder: Decoder[List[Role]] = BitFlag.decoder(Role)
+  implicit val roleEncoder: Encoder[List[Role]] = BitFlag.encoder
 }

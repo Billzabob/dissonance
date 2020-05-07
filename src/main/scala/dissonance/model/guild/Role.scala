@@ -2,7 +2,7 @@ package dissonance.model.guild
 
 import dissonance.model.Color
 import dissonance.model.{Permission, Snowflake}
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 
@@ -20,4 +20,5 @@ case class Role(
 object Role {
   implicit val config: Configuration      = Configuration.default.withSnakeCaseMemberNames
   implicit val roleDecoder: Decoder[Role] = deriveConfiguredDecoder
+  implicit val roleEncoder: Encoder[Role] = deriveConfiguredEncoder
 }
