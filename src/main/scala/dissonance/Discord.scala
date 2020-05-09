@@ -37,6 +37,8 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
   type SessionId      = Ref[IO, Option[String]]
   type Acks           = Queue[IO, Unit]
 
+  def subscribe(intents: Intent*): Stream[IO, Event] = subscribe(intents.toList)
+
   def subscribe(intents: List[Intent]): Stream[IO, Event] = {
     val sequenceNumber = Ref[IO].of(none[Int])
     val sessionId      = Ref[IO].of(none[String])
@@ -80,7 +82,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       .rethrow
       .map(event => handleEvents(event, sequenceNumber, acks, sessionId, connection, intents))
       .parJoinUnbounded
-      .handleErrorWith(e => Stream.eval_(putStrLn(e.toString)))
+      .interruptWhen(connection.closeFrame.get.map(checkForGracefulClose))
   }
 
   private def handleEvents(
@@ -114,6 +116,13 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       case None     => identifyMessage(intents).pure[IO]
       case Some(id) => sequenceNumber.get.map(s => resumeMessage(id, s))
     }
+
+  def checkForGracefulClose(closeFrame: Close): Either[Throwable, Unit] = closeFrame match {
+    case Close(1000, _) =>
+      ().asRight
+    case Close(status, reason) =>
+      ConnectionClosedWithError(status, reason).asLeft
+  }
 
   private def heartbeat(
       interval: FiniteDuration,

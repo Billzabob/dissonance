@@ -20,5 +20,5 @@ case class Identify(
 
 object Identify {
   implicit val config: Configuration      = Configuration.default.withSnakeCaseMemberNames
-  implicit val encoder: Encoder[Identify] = deriveConfiguredEncoder
+  implicit val encoder: Encoder[Identify] = deriveConfiguredEncoder[Identify].mapJson(_.dropNullValues)
 }
