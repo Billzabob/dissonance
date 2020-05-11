@@ -117,12 +117,13 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       case Some(id) => sequenceNumber.get.map(s => resumeMessage(id, s))
     }
 
-  def checkForGracefulClose(closeFrame: Close): Either[Throwable, Unit] = closeFrame match {
-    case Close(1000, _) =>
-      ().asRight
-    case Close(status, reason) =>
-      ConnectionClosedWithError(status, reason).asLeft
-  }
+  def checkForGracefulClose(closeFrame: Close): Either[Throwable, Unit] =
+    closeFrame match {
+      case Close(1000, _) =>
+        ().asRight
+      case Close(status, reason) =>
+        ConnectionClosedWithError(status, reason).asLeft
+    }
 
   private def heartbeat(
       interval: FiniteDuration,
