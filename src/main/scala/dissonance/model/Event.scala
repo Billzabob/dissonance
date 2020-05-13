@@ -63,7 +63,7 @@ object Event {
   case class MessageReactionRemove(userId: Snowflake, channelId: Snowflake, messageId: Snowflake, guildId: Option[Snowflake], emoji: Emoji)                            extends Event
   case class MessageReactionRemoveAll(channelId: Snowflake, messageId: Snowflake, guildId: Option[Snowflake])                                                          extends Event
   case class MessageReactionRemoveEmoji(channelId: Snowflake, messageId: Snowflake, guildId: Option[Snowflake], emoji: Emoji)                                          extends Event
-  case class MessageUpdate(message: Message)                                                                                                                           extends Event // TODO: Probably won't work since inner message for Update might only have id and channelId.
+  case class MessageUpdate(update: message.Update)                                                                                                                     extends Event
   case class PresenceUpdate(presence: Presence)                                                                                                                        extends Event
   case class Ready(v: Integer, user: User, sessionId: String, shard: Option[(Int, Int)])                                                                               extends Event // TODO: Parse the 2 element array into a case class instead of tuple
   case object Resumed                                                                                                                                                  extends Event
@@ -122,7 +122,7 @@ object Event {
       case "INVITE_CREATE"                 => data.as[InviteCreate]
       case "INVITE_DELETE"                 => data.as[InviteDelete]
       case "MESSAGE_CREATE"                => data.as[Message].map(MessageCreate)
-      case "MESSAGE_UPDATE"                => data.as[Message].map(MessageUpdate)
+      case "MESSAGE_UPDATE"                => data.as[message.Update].map(MessageUpdate)
       case "MESSAGE_DELETE"                => data.as[MessageDelete]
       case "MESSAGE_DELETE_BULK"           => data.as[MessageDeleteBulk]
       case "MESSAGE_REACTION_ADD"          => data.as[MessageReactionAdd]
