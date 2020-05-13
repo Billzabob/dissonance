@@ -6,7 +6,7 @@ import io.circe.generic.extras.semiauto._
 import org.http4s.circe._
 import org.http4s.Uri
 
-case class Author(name: Option[String], url: Option[Uri], iconUrl: Option[Uri], proxyIconUrl: Uri)
+case class Author(name: Option[String], url: Option[Uri], iconUrl: Option[Uri], proxyIconUrl: Option[Uri])
 
 object Author {
   implicit val config: Configuration          = Configuration.default.withSnakeCaseMemberNames
