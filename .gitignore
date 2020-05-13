@@ -2,3 +2,4 @@ target/
 metals.sbt
 .metals/
 .bloop
+.idea/
