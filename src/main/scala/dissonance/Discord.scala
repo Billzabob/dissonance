@@ -33,10 +33,6 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
 
   val client = new DiscordClient(token, httpClient)
 
-  type SequenceNumber = Ref[IO, Option[Int]]
-  type SessionId      = Ref[IO, Option[String]]
-  type Acks           = Queue[IO, Unit]
-
   def subscribe(intents: Intent*): Stream[IO, Event] = subscribe(intents.toList)
 
   def subscribe(intents: List[Intent]): Stream[IO, Event] = {
@@ -44,7 +40,12 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
     val sessionId      = Ref[IO].of(none[String])
     val acks           = Queue.unbounded[IO, Unit]
 
-    Stream.force((getUri, sequenceNumber, sessionId, acks).mapN(processEvents(intents)))
+    val events = for {
+      state <- (sequenceNumber, sessionId, acks).mapN(DiscordState)
+      uri   <- getUri
+    } yield processEvents(uri, intents, state)
+
+    Stream.force(events)
   }
 
   private def getUri: IO[Uri] =
@@ -55,24 +56,13 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       .rethrow
       .map(_.withQueryParam("v", 6).withQueryParam("encoding", "json"))
 
-  private def processEvents(intents: List[Intent])(
-      uri: Uri,
-      sequenceNumber: SequenceNumber,
-      sessionId: SessionId,
-      acks: Acks
-  ): Stream[IO, Event] =
+  private def processEvents(uri: Uri, intents: List[Intent], state: DiscordState): Stream[IO, Event] =
     Stream
       .resource(wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers(token)))))
-      .flatMap(connection => events(connection, sequenceNumber, acks, sessionId, intents))
+      .flatMap(connection => events(connection, intents, state))
       .repeat
 
-  private def events(
-      connection: WSConnectionHighLevel[IO],
-      sequenceNumber: SequenceNumber,
-      acks: Acks,
-      sessionId: SessionId,
-      intents: List[Intent]
-  ): Stream[IO, Event] = {
+  private def events(connection: WSConnectionHighLevel[IO], intents: List[Intent], state: DiscordState): Stream[IO, Event] = {
     connection.receiveStream
       .collect {
         // Will always be text since we request JSON encoding
@@ -80,37 +70,36 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       }
       .map(decode[ControlMessage])
       .rethrow
-      .map(event => handleEvents(event, sequenceNumber, acks, sessionId, connection, intents))
+      .map(event => handleEvents(event, connection, intents, state))
       // TODO: If we receive `Some(event)` and `None` concurrently, we could potentially drop `event` here
       .parJoinUnbounded
       .unNoneTerminate
       .interruptWhen(connection.closeFrame.get.map(checkForGracefulClose))
   }
 
-  private def handleEvents(
-      event: ControlMessage,
-      sequenceNumber: SequenceNumber,
-      acks: Acks,
-      sessionId: SessionId,
-      connection: WSConnectionHighLevel[IO],
-      intents: List[Intent]
-  ): Stream[IO, Option[Event]] =
+  // TODO: This could probably be simplified if we just return IO instead of Stream
+  private def handleEvents(event: ControlMessage, connection: WSConnectionHighLevel[IO], intents: List[Intent], state: DiscordState): Stream[IO, Option[Event]] =
     event match {
       case Hello(interval) =>
-        Stream.eval_(identifyOrResume(sessionId, sequenceNumber, intents).flatMap(connection.send)) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
+        Stream.eval_(identifyOrResume(state.sessionId, state.sequenceNumber, intents).flatMap(connection.send)) ++ heartbeat(
+          interval,
+          connection,
+          state.sequenceNumber,
+          state.acks
+        ).drain
       case HeartBeatAck =>
-        Stream.eval_(acks.enqueue1(()))
+        Stream.eval_(state.acks.enqueue1(()))
       case Heartbeat(d) =>
         Stream.eval_(putStrLn(s"Heartbeat received: $d"))
       case Reconnect =>
         Stream.emit(None)
       case InvalidSession(resumable) =>
-        Stream.eval_(if (resumable) IO.unit else sessionId.set(none)) ++ Stream.sleep_(5.seconds) ++ Stream.emit(None)
+        Stream.eval_(if (resumable) IO.unit else state.sessionId.set(none)) ++ Stream.sleep_(5.seconds) ++ Stream.emit(None)
       case Dispatch(nextSequenceNumber, event) =>
         (event match {
-          case Ready(_, _, id, _) => Stream.eval_(sessionId.set(id.some))
+          case Ready(_, _, id, _) => Stream.eval_(state.sessionId.set(id.some))
           case _                  => Stream.empty
-        }) ++ Stream.eval_(sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(Some(event))
+        }) ++ Stream.eval_(state.sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(Some(event))
     }
 
   private def identifyOrResume(sessionId: SessionId, sequenceNumber: SequenceNumber, intents: List[Intent]): IO[Text] =
@@ -127,12 +116,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
         ConnectionClosedWithError(status, reason).asLeft
     }
 
-  private def heartbeat(
-      interval: FiniteDuration,
-      connection: WSConnectionHighLevel[IO],
-      sequenceNumber: SequenceNumber,
-      acks: Acks
-  ): Stream[IO, Unit] = {
+  private def heartbeat(interval: FiniteDuration, connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: Acks): Stream[IO, Unit] = {
     val sendHeartbeat = makeHeartbeat(sequenceNumber).flatMap(connection.send)
     val heartbeats    = Stream.eval(sendHeartbeat) ++ Stream.repeatEval(sendHeartbeat).metered(interval)
 
@@ -166,4 +150,10 @@ object Discord {
 
   val apiEndpoint                           = uri"https://discordapp.com/api"
   def headers(token: String): Authorization = Authorization(Credentials.Token("Bot".ci, token))
+
+  type SequenceNumber = Ref[IO, Option[Int]]
+  type SessionId      = Ref[IO, Option[String]]
+  type Acks           = Queue[IO, Unit]
+
+  case class DiscordState(sequenceNumber: SequenceNumber, sessionId: SessionId, acks: Acks)
 }
