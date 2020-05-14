@@ -81,7 +81,9 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       .map(decode[ControlMessage])
       .rethrow
       .map(event => handleEvents(event, sequenceNumber, acks, sessionId, connection, intents))
+      // TODO: If we receive `Some(event)` and `None` concurrently, we could potentially drop `event` here
       .parJoinUnbounded
+      .unNoneTerminate
       .interruptWhen(connection.closeFrame.get.map(checkForGracefulClose))
   }
 
@@ -92,7 +94,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       sessionId: SessionId,
       connection: WSConnectionHighLevel[IO],
       intents: List[Intent]
-  ): Stream[IO, Event] =
+  ): Stream[IO, Option[Event]] =
     event match {
       case Hello(interval) =>
         Stream.eval_(identifyOrResume(sessionId, sequenceNumber, intents).flatMap(connection.send)) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
@@ -101,14 +103,14 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       case Heartbeat(d) =>
         Stream.eval_(putStrLn(s"Heartbeat received: $d"))
       case Reconnect =>
-        Stream.raiseError[IO](ReconnectReceived)
+        Stream.emit(None)
       case InvalidSession(resumable) =>
-        Stream.eval_(if (resumable) IO.unit else sessionId.set(none)) ++ Stream.sleep_(5.seconds) ++ Stream.raiseError[IO](SessionInvalid(resumable))
+        Stream.eval_(if (resumable) IO.unit else sessionId.set(none)) ++ Stream.sleep_(5.seconds) ++ Stream.emit(None)
       case Dispatch(nextSequenceNumber, event) =>
         (event match {
           case Ready(_, _, id, _) => Stream.eval_(sessionId.set(id.some))
           case _                  => Stream.empty
-        }) ++ Stream.eval_(sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(event)
+        }) ++ Stream.eval_(sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(Some(event))
     }
 
   private def identifyOrResume(sessionId: SessionId, sequenceNumber: SequenceNumber, intents: List[Intent]): IO[Text] =
