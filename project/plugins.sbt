@@ -4,3 +4,4 @@ addSbtPlugin("net.virtual-void"          % "sbt-dependency-graph"   % "0.10.0-RC
 addSbtPlugin("org.jmotor.sbt"            % "sbt-dependency-updates" % "1.2.2")      // Check for dependency updates with `sbt dependencyUpdates`
 addSbtPlugin("org.scalameta"             % "sbt-scalafmt"           % "2.3.4")      // Format code with `sbt scalafmt`
 addSbtPlugin("org.scoverage"             % "sbt-scoverage"          % "1.6.1")      // Runs code coverage for the project `sbt coverage` https://github.com/scoverage/sbt-scoverage
+addSbtPlugin("com.geirsson"              % "sbt-ci-release"         % "1.5.3")      // Automatically publish to Sonatype and Maven Central
