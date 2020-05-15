@@ -13,7 +13,7 @@ import dissonance.model.identify.{Identify, IdentifyConnectionProperties}
 import dissonance.model.intents.Intent
 import dissonance.utils._
 import fs2.concurrent.Queue
-import fs2.Stream
+import fs2.{Pipe, Stream}
 import io.circe.Json
 import io.circe.parser._
 import io.circe.syntax._
@@ -26,7 +26,6 @@ import org.http4s.client.jdkhttpclient.WSFrame._
 import org.http4s.headers._
 import org.http4s.implicits._
 import org.http4s.Method._
-
 import scala.concurrent.duration._
 
 class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(implicit cs: ContextShift[IO], t: Timer[IO]) {
@@ -70,37 +69,33 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       }
       .map(decode[ControlMessage])
       .rethrow
-      .map(event => handleEvents(event, connection, intents, state))
-      // TODO: If we receive `Some(event)` and `None` concurrently, we could potentially drop `event` here
-      .parJoinUnbounded
-      .unNoneTerminate
+      .through(sendHeartbeats(connection, state.sequenceNumber, state.acks))
+      .through(handleEvents(connection, intents, state))
       .interruptWhen(connection.closeFrame.get.map(checkForGracefulClose))
   }
 
-  // TODO: This could probably be simplified if we just return IO instead of Stream
-  private def handleEvents(event: ControlMessage, connection: WSConnectionHighLevel[IO], intents: List[Intent], state: DiscordState): Stream[IO, Option[Event]] =
-    event match {
-      case Hello(interval) =>
-        Stream.eval_(identifyOrResume(state.sessionId, state.sequenceNumber, intents).flatMap(connection.send)) ++ heartbeat(
-          interval,
-          connection,
-          state.sequenceNumber,
-          state.acks
-        ).drain
+  // TODO: Might be possible to simplify. Waiting for response here: https://gitter.im/functional-streams-for-scala/fs2?at=5ebddb312ac6ef4e88c85d79
+  private def sendHeartbeats(connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: Acks): Pipe[IO, ControlMessage, ControlMessage] =
+    _.map {
+      case hello @ Hello(interval) => Stream.emit(hello) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
+      case other                   => Stream.emit(other)
+    }.parJoinUnbounded
+
+  private def handleEvents(connection: WSConnectionHighLevel[IO], intents: List[Intent], state: DiscordState): Pipe[IO, ControlMessage, Event] =
+    _.evalMap {
+      case Hello(_) =>
+        identifyOrResume(state.sessionId, state.sequenceNumber, intents).flatMap(connection.send).as(None)
       case HeartBeatAck =>
-        Stream.eval_(state.acks.enqueue1(()))
+        state.acks.enqueue1(()).as(None)
       case Heartbeat(d) =>
-        Stream.eval_(putStrLn(s"Heartbeat received: $d"))
+        putStrLn(s"Heartbeat received: $d").as(None)
       case Reconnect =>
-        Stream.emit(None)
+        Some(None).pure[IO]
       case InvalidSession(resumable) =>
-        Stream.eval_(if (resumable) IO.unit else state.sessionId.set(none)) ++ Stream.sleep_(5.seconds) ++ Stream.emit(None)
+        state.sessionId.set(None).whenA(!resumable) >> IO.sleep(5.seconds).as(Some(None))
       case Dispatch(nextSequenceNumber, event) =>
-        (event match {
-          case Ready(_, _, id, _) => Stream.eval_(state.sessionId.set(id.some))
-          case _                  => Stream.empty
-        }) ++ Stream.eval_(state.sequenceNumber.set(nextSequenceNumber.some)) ++ Stream.emit(Some(event))
-    }
+        setSessionId(event, state.sessionId) >> state.sequenceNumber.set(nextSequenceNumber.some).as(Some(Some(event)))
+    }.unNone.unNoneTerminate
 
   private def identifyOrResume(sessionId: SessionId, sequenceNumber: SequenceNumber, intents: List[Intent]): IO[Text] =
     sessionId.get.flatMap {
@@ -114,6 +109,12 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
         ().asRight
       case Close(status, reason) =>
         ConnectionClosedWithError(status, reason).asLeft
+    }
+
+  private def setSessionId(event: Event, sessionId: SessionId): IO[Unit] =
+    event match {
+      case Ready(_, _, id, _) => sessionId.set(id.some)
+      case _                  => IO.unit
     }
 
   private def heartbeat(interval: FiniteDuration, connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: Acks): Stream[IO, Unit] = {
