@@ -13,7 +13,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - uses: olafurpg/setup-scala@v2
       - uses: olafurpg/setup-gpg@v2
       - name: Publish
         run: sbt ci-release
