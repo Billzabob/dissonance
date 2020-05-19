@@ -35,12 +35,13 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
   def subscribe(intents: Intent*): Stream[IO, Event] = subscribe(intents.toList)
 
   def subscribe(intents: List[Intent]): Stream[IO, Event] = {
-    val sequenceNumber = Ref[IO].of(none[Int])
-    val sessionId      = Ref[IO].of(none[String])
-    val acks           = Queue.unbounded[IO, Unit]
+    val sequenceNumber    = Ref[IO].of(none[Int])
+    val sessionId         = Ref[IO].of(none[String])
+    val acks              = Queue.unbounded[IO, Unit]
+    val heartbeatInterval = Deferred[IO, FiniteDuration]
 
     val events = for {
-      state <- (sequenceNumber, sessionId, acks).mapN(DiscordState)
+      state <- (sequenceNumber, sessionId, acks, heartbeatInterval).mapN(DiscordState)
       uri   <- getUri
     } yield processEvents(uri, intents, state)
 
@@ -69,33 +70,28 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       }
       .map(decode[ControlMessage])
       .rethrow
-      .through(sendHeartbeats(connection, state.sequenceNumber, state.acks))
+      .concurrently(heartbeat(state.interval, connection, state.sequenceNumber, state.acks))
       .through(handleEvents(connection, intents, state))
+      .takeWhile(result => !result.terminate)
+      .collect { case Result(Some(event)) => event }
       .interruptWhen(connection.closeFrame.get.map(checkForGracefulClose))
   }
 
-  // TODO: Might be possible to simplify. Waiting for response here: https://gitter.im/functional-streams-for-scala/fs2?at=5ebddb312ac6ef4e88c85d79
-  private def sendHeartbeats(connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: Acks): Pipe[IO, ControlMessage, ControlMessage] =
-    _.map {
-      case hello @ Hello(interval) => Stream.emit(hello) ++ heartbeat(interval, connection, sequenceNumber, acks).drain
-      case other                   => Stream.emit(other)
-    }.parJoinUnbounded
-
-  private def handleEvents(connection: WSConnectionHighLevel[IO], intents: List[Intent], state: DiscordState): Pipe[IO, ControlMessage, Event] =
+  private def handleEvents(connection: WSConnectionHighLevel[IO], intents: List[Intent], state: DiscordState): Pipe[IO, ControlMessage, EventResult] =
     _.evalMap {
-      case Hello(_) =>
-        identifyOrResume(state.sessionId, state.sequenceNumber, intents).flatMap(connection.send).as(None)
+      case Hello(interval) =>
+        state.interval.complete(interval) >> identifyOrResume(state.sessionId, state.sequenceNumber, intents).flatMap(connection.send).as(Result(None))
       case HeartBeatAck =>
-        state.acks.enqueue1(()).as(None)
+        state.acks.enqueue1(()).as(Result(None))
       case Heartbeat(d) =>
-        putStrLn(s"Heartbeat received: $d").as(None)
+        putStrLn(s"Heartbeat received: $d").as(Result(None))
       case Reconnect =>
-        Some(None).pure[IO]
+        Terminate.pure[IO]
       case InvalidSession(resumable) =>
-        state.sessionId.set(None).whenA(!resumable) >> IO.sleep(5.seconds).as(Some(None))
+        state.sessionId.set(None).whenA(!resumable) >> IO.sleep(5.seconds).as(Terminate)
       case Dispatch(nextSequenceNumber, event) =>
-        setSessionId(event, state.sessionId) >> state.sequenceNumber.set(nextSequenceNumber.some).as(Some(Some(event)))
-    }.unNone.unNoneTerminate
+        setSessionId(event, state.sessionId) >> state.sequenceNumber.set(nextSequenceNumber.some).as(Result(Some(event)))
+    }
 
   private def identifyOrResume(sessionId: SessionId, sequenceNumber: SequenceNumber, intents: List[Intent]): IO[Text] =
     sessionId.get.flatMap {
@@ -103,7 +99,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       case Some(id) => sequenceNumber.get.map(s => resumeMessage(id, s))
     }
 
-  def checkForGracefulClose(closeFrame: Close): Either[Throwable, Unit] =
+  private def checkForGracefulClose(closeFrame: Close): Either[Throwable, Unit] =
     closeFrame match {
       case Close(1000, _) =>
         ().asRight
@@ -117,16 +113,17 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       case _                  => IO.unit
     }
 
-  private def heartbeat(interval: FiniteDuration, connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: Acks): Stream[IO, Unit] = {
-    val sendHeartbeat = makeHeartbeat(sequenceNumber).flatMap(connection.send)
-    val heartbeats    = Stream.eval(sendHeartbeat) ++ Stream.repeatEval(sendHeartbeat).metered(interval)
+  private def heartbeat(interval: HeartbeatInterval, connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: Acks): Stream[IO, Unit] =
+    Stream.eval(interval.get).flatMap { interval =>
+      val sendHeartbeat = makeHeartbeat(sequenceNumber).flatMap(connection.send)
+      val heartbeats    = Stream.eval(sendHeartbeat) ++ Stream.repeatEval(sendHeartbeat).metered(interval)
 
-    // TODO: Something besides true, false
-    (heartbeats.as(true) merge acks.dequeue.as(false)).zipWithPrevious.flatMap {
-      case (Some(true), true) => Stream.raiseError[IO](NoHeartbeatAck)
-      case _                  => Stream.emit(())
+      // TODO: Something besides true, false
+      (heartbeats.as(true) merge acks.dequeue.as(false)).zipWithPrevious.flatMap {
+        case (Some(true), true) => Stream.raiseError[IO](NoHeartbeatAck)
+        case _                  => Stream.emit(())
+      }
     }
-  }
 
   private def makeHeartbeat(sequenceNumber: SequenceNumber) =
     sequenceNumber.get.map(Heartbeat.apply).map(heartbeat => Text(heartbeat.asJson.noSpaces))
@@ -152,9 +149,14 @@ object Discord {
   val apiEndpoint                           = uri"https://discordapp.com/api"
   def headers(token: String): Authorization = Authorization(Credentials.Token("Bot".ci, token))
 
-  type SequenceNumber = Ref[IO, Option[Int]]
-  type SessionId      = Ref[IO, Option[String]]
-  type Acks           = Queue[IO, Unit]
+  type SequenceNumber    = Ref[IO, Option[Int]]
+  type SessionId         = Ref[IO, Option[String]]
+  type Acks              = Queue[IO, Unit]
+  type HeartbeatInterval = Deferred[IO, FiniteDuration]
 
-  case class DiscordState(sequenceNumber: SequenceNumber, sessionId: SessionId, acks: Acks)
+  case class DiscordState(sequenceNumber: SequenceNumber, sessionId: SessionId, acks: Acks, interval: HeartbeatInterval)
+
+  sealed trait EventResult                extends Product with Serializable { val terminate: Boolean }
+  case class Result(event: Option[Event]) extends EventResult               { val terminate = false  }
+  case object Terminate                   extends EventResult               { val terminate = true   }
 }
