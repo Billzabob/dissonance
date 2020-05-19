@@ -70,7 +70,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       }
       .map(decode[ControlMessage])
       .rethrow
-      .evalMap(controlMessage => handleEvents(controlMessage, connection, intents, state))
+      .parEvalMap(Int.MaxValue)(controlMessage => handleEvents(controlMessage, connection, intents, state))
       .takeWhile(result => !result.terminate)
       .collect { case Result(Some(event)) => event }
       .concurrently(heartbeat(connection, state.interval, state.sequenceNumber, state.acks))
