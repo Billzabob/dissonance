@@ -70,15 +70,15 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       }
       .map(decode[ControlMessage])
       .rethrow
-      .concurrently(heartbeat(state.interval, connection, state.sequenceNumber, state.acks))
-      .through(handleEvents(connection, intents, state))
+      .evalMap(controlMessage => handleEvents(controlMessage, connection, intents, state))
       .takeWhile(result => !result.terminate)
       .collect { case Result(Some(event)) => event }
+      .concurrently(heartbeat(connection, state.interval, state.sequenceNumber, state.acks))
       .interruptWhen(connection.closeFrame.get.map(checkForGracefulClose))
   }
 
-  private def handleEvents(connection: WSConnectionHighLevel[IO], intents: List[Intent], state: DiscordState): Pipe[IO, ControlMessage, EventResult] =
-    _.evalMap {
+  private def handleEvents(controlMessage: ControlMessage, connection: WSConnectionHighLevel[IO], intents: List[Intent], state: DiscordState): IO[EventResult] =
+    controlMessage match {
       case Hello(interval) =>
         state.interval.complete(interval) >> identifyOrResume(state.sessionId, state.sequenceNumber, intents).flatMap(connection.send).as(Result(None))
       case HeartBeatAck =>
@@ -113,7 +113,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       case _                  => IO.unit
     }
 
-  private def heartbeat(interval: HeartbeatInterval, connection: WSConnectionHighLevel[IO], sequenceNumber: SequenceNumber, acks: Acks): Stream[IO, Unit] =
+  private def heartbeat(connection: WSConnectionHighLevel[IO], interval: HeartbeatInterval, sequenceNumber: SequenceNumber, acks: Acks): Stream[IO, Unit] =
     Stream.eval(interval.get).flatMap { interval =>
       val sendHeartbeat = makeHeartbeat(sequenceNumber).flatMap(connection.send)
       val heartbeats    = Stream.eval(sendHeartbeat) ++ Stream.repeatEval(sendHeartbeat).metered(interval)
