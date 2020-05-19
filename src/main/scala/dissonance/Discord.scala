@@ -13,7 +13,7 @@ import dissonance.model.identify.{Identify, IdentifyConnectionProperties}
 import dissonance.model.intents.Intent
 import dissonance.utils._
 import fs2.concurrent.Queue
-import fs2.{Pipe, Stream}
+import fs2.Stream
 import io.circe.Json
 import io.circe.parser._
 import io.circe.syntax._
