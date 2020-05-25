@@ -9,15 +9,15 @@ import dissonance.model.message.Message
 import dissonance.model.webhook.Webhook
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
-import io.circe.{Encoder, Json}
 import io.circe.syntax._
+import io.circe.{Encoder, Json}
 import org.http4s.Method._
-import org.http4s.Uri
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.circe.encodeUri
 import org.http4s.client.Client
 import org.http4s.client.dsl.io._
 import org.http4s.client.jdkhttpclient.JdkHttpClient
+import org.http4s.{Status, Uri}
 
 class DiscordClient(token: String, client: Client[IO]) {
 
@@ -52,7 +52,7 @@ class DiscordClient(token: String, client: Client[IO]) {
         POST(
           // TODO Case class here
           Json.obj(
-            "name" -> name.asJson,
+            "name"   -> name.asJson,
             "avatar" -> avatar.asJson
           ),
           apiEndpoint.addPath(s"channels/$channelId/webhooks"),
@@ -101,8 +101,8 @@ class DiscordClient(token: String, client: Client[IO]) {
         PATCH(
           // TODO Case class here
           Json.obj(
-            "name" -> name.asJson,
-            "avatar" -> avatar.asJson,
+            "name"       -> name.asJson,
+            "avatar"     -> avatar.asJson,
             "channel_id" -> channelId.asJson
           ),
           apiEndpoint.addPath(s"webhooks/$webhookId"),
@@ -116,42 +116,43 @@ class DiscordClient(token: String, client: Client[IO]) {
         PATCH(
           // TODO Case class here
           Json.obj(
-            "name" -> name.asJson,
-            "avatar" -> avatar.asJson,
+            "name"       -> name.asJson,
+            "avatar"     -> avatar.asJson,
             "channel_id" -> channelId.asJson
           ),
           apiEndpoint.addPath(s"webhooks/$webhookId/$token")
         )
       )
 
-  def deleteWebhook(webhookId: Snowflake): IO[Unit] =
+  def deleteWebhook(webhookId: Snowflake): IO[Status] =
     client
-    .expect[Unit](
-      DELETE(
-        apiEndpoint.addPath(s"webhooks/$webhookId"),
-        headers(token)
+      .status(
+        DELETE(
+          apiEndpoint.addPath(s"webhooks/$webhookId"),
+          headers(token)
+        )
       )
-    )
 
-  def deleteWebhookWithToken(webhookId: Snowflake, token: String): IO[Unit] =
+  def deleteWebhookWithToken(webhookId: Snowflake, token: String): IO[Status] =
     client
-      .expect[Unit](
+      .status(
         DELETE(
           apiEndpoint.addPath(s"webhooks/$webhookId/$token")
         )
       )
 
   // TODO: Handle uploading files which requires multipart/form-data
-  def executeWebhook(webhookId: Snowflake, token: String, wait: Option[Boolean], webhookMessage: WebhookMessage): IO[Unit] =
+  def executeWebhook(webhook: Webhook, wait: Option[Boolean], webhookMessage: WebhookMessage): IO[Status] =
     client
-    .expect[Unit](
-      POST(
-        webhookMessage.asJson,
-        apiEndpoint
-          .addPath(s"webhooks/$webhookId/$token")
-          .withQueryParam("wait", wait.getOrElse(false))
+      .status(
+        POST(
+          webhookMessage.asJson,
+          apiEndpoint
+            .addPath(s"webhooks/${webhook.id}/${webhook.token.get}")
+            .withQueryParam("wait", wait.getOrElse(false)),
+          headers(token)
+        )
       )
-    )
 
   // TODO: Add Slack and Github Webhooks
 }
@@ -163,14 +164,14 @@ object DiscordClient {
   type AllowedMentions = Unit // TODO: Implement this
 
   case class WebhookMessage(
-    content: String,
-    username: Option[String],
-    avatarUrl: Option[String],
-    tts: Option[Boolean],
-    file: Unit, // TODO: Figure out what this is supposed to be
-    embeds: List[Embed], // TODO: Configure this to be max length of 10
-    payloadJson: Unit, // TODO: Figure out what this is supposed to be
-    allowedMentions: AllowedMentions
+      content: String,
+      username: Option[String],
+      avatarUrl: Option[String],
+      tts: Option[Boolean],
+      file: Unit,          // TODO: Figure out what this is supposed to be
+      embeds: List[Embed], // TODO: Configure this to be max length of 10
+      payloadJson: Unit,   // TODO: Figure out what this is supposed to be
+      allowedMentions: AllowedMentions
   )
 
   object WebhookMessage {
