@@ -1,6 +1,7 @@
 package dissonance.model.webhook
 
 import dissonance.model.Snowflake
+import dissonance.model.imagedata.ImageDataUri
 import dissonance.model.user.User
 import io.circe.Decoder
 import io.circe.generic.extras.Configuration
@@ -13,7 +14,7 @@ case class Webhook(
     channelId: Snowflake,
     user: Option[User], // TODO: optional key
     name: Option[String],
-    avatar: Option[String],
+    avatar: Option[ImageDataUri],
     token: Option[String] // TODO: optional key
 )
 

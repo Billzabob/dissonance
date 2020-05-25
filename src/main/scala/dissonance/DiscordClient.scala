@@ -5,6 +5,7 @@ import dissonance.Discord._
 import dissonance.DiscordClient.WebhookMessage
 import dissonance.model.Snowflake
 import dissonance.model.embed.Embed
+import dissonance.model.imagedata.ImageDataUri
 import dissonance.model.message.Message
 import dissonance.model.webhook.Webhook
 import io.circe.generic.extras.Configuration
@@ -12,12 +13,11 @@ import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax._
 import io.circe.{Encoder, Json}
 import org.http4s.Method._
+import org.http4s.Status
 import org.http4s.circe.CirceEntityCodec._
-import org.http4s.circe.encodeUri
 import org.http4s.client.Client
 import org.http4s.client.dsl.io._
 import org.http4s.client.jdkhttpclient.JdkHttpClient
-import org.http4s.{Status, Uri}
 
 class DiscordClient(token: String, client: Client[IO]) {
 
@@ -46,7 +46,7 @@ class DiscordClient(token: String, client: Client[IO]) {
         )
       )
 
-  def createWebhook(name: String, avatar: Option[Uri], channelId: Snowflake): IO[Webhook] =
+  def createWebhook(name: String, avatar: Option[ImageDataUri], channelId: Snowflake): IO[Webhook] =
     client
       .expect[Webhook](
         POST(
@@ -95,7 +95,7 @@ class DiscordClient(token: String, client: Client[IO]) {
         )
       )
 
-  def modifyWebhook(webhookId: Snowflake, name: Option[String], avatar: Option[Uri], channelId: Option[Snowflake]): IO[Webhook] =
+  def modifyWebhook(webhookId: Snowflake, name: Option[String], avatar: Option[ImageDataUri], channelId: Option[Snowflake]): IO[Webhook] =
     client
       .expect[Webhook](
         PATCH(
@@ -110,7 +110,7 @@ class DiscordClient(token: String, client: Client[IO]) {
         )
       )
 
-  def modifyWebhookWithToken(webhookId: Snowflake, name: Option[String], avatar: Option[Uri], channelId: Option[Snowflake], token: String): IO[Webhook] =
+  def modifyWebhookWithToken(webhookId: Snowflake, name: Option[String], avatar: Option[ImageDataUri], channelId: Option[Snowflake], token: String): IO[Webhook] =
     client
       .expect[Webhook](
         PATCH(
