@@ -14,14 +14,14 @@ object utils {
     } { _ => putStrLn(s"Releasing Resource $i...") >> IO.sleep(duration) >> putStrLn(s"Released Resource $i") }
 
   def javaClient: IO[HttpClient] =
-    for {
-      sslParams <- IO {
-                     // Need to user TLSv1.2 because the default of TLSv1.3 is bugged in JDK 11
-                     // See here: https://github.com/http4s/http4s-jdk-http-client/issues/200
-                     val params = javax.net.ssl.SSLContext.getDefault.getDefaultSSLParameters
-                     params.setProtocols(Array("TLSv1.2"))
-                     params
-                   }
-      javaClient <- IO(HttpClient.newBuilder.sslParameters(sslParams).build)
-    } yield javaClient
+    IO {
+      val builder = HttpClient.newBuilder()
+      // workaround for https://github.com/http4s/http4s-jdk-http-client/issues/200
+      if (Runtime.version().feature() == 11) {
+        val params = javax.net.ssl.SSLContext.getDefault().getDefaultSSLParameters()
+        params.setProtocols(params.getProtocols().filter(_ != "TLSv1.3"))
+        builder.sslParameters(params)
+      }
+      builder.build()
+    }
 }
