@@ -4,7 +4,7 @@ object Dependencies {
 
   object Versions {
     val fs2             = "2.4.4"
-    val cats            = "2.1.1"
+    val cats            = "2.2.0"
     val circe           = "0.13.0"
     val http4s          = "0.21.7"
     val newtype         = "0.4.4"
