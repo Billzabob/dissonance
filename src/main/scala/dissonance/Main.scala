@@ -21,34 +21,63 @@ object Main extends IOApp {
     Discord
       .make(token)
       .use { discord =>
-        val foo = isPhilPlaying(discord.client.client).evalMap { playing =>
-          if (playing) {
-            discord.client.sendMessage("Phil is playing League", 602899721912188950L).void
-          } else IO.unit
-        }
+        val notifyPhilPlaying =
+          philsGames(discord.client.client)
+            .evalMap { gameId =>
+              discord.client.client.expect[Json](
+                Request[IO](
+                  uri = uri"https://na1.api.riotgames.com/lol/match/v4/matches" / gameId.toString,
+                  headers = Headers.of(Header("X-Riot-Token", token))
+                )
+              )
+            }.evalMap { json =>
+              val winners = getWinningTeam(json)
+              val philsId = getPhilsParticipantId(json)
 
-        val bar = discord.subscribe(Intent.GuildMessages).void
+              val philWon = (winners == 100 && philsId <= 5) || (winners == 200 && philsId >= 6)
 
-        Stream(foo, bar).parJoinUnbounded.compile.drain
+              if (philWon) {
+                discord.client.sendMessage("Phil just WON a game of League", 602899721912188950L).void
+              } else {
+                discord.client.sendMessage("Phil just LOST a game of League", 602899721912188950L).void
+              }
+            }
+
+        val events = discord.subscribe(Intent.GuildMessages).handleErrorWith(e => Stream.eval_(IO(println(e)))).repeat
+
+        Stream(notifyPhilPlaying, events.void).parJoinUnbounded.compile.drain
       }
       .as(ExitCode.Success)
   }
 
-  def isPhilPlaying(client: Client[IO]): Stream[IO, Boolean] = {
+  type GameId = Long
+
+  def philsGames(client: Client[IO]): Stream[IO, Long] = {
     Stream
       .repeatEval {
         client.expect[Json](
           Request[IO](
-            uri = uri"https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/iMaXll1L6hakH-KuVWi5WfmSi9y58Chx6xzzbLNfy5OPMg",
-            headers = Headers.of(Header("X-Riot-Token", "RGAPI-4d83aa3d-5904-4245-a393-00bc753b98db"))
+            uri = uri"https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account" / accountId,
+            headers = Headers.of(Header("X-Riot-Token", token))
           )
         )
       }
       .metered(1.minute)
       .map(_.hcursor.downField("matches").downArray.get[Long]("gameId").toOption.get)
       .zipWithNext
-      .map { case (gameId, gameId2) => gameId.some != gameId2 }
+      .flatMap { case (gameId, gameId2) =>
+        if (gameId != gameId2.get) Stream.emit(gameId2.get) else Stream.empty
+      }
   }
+
+  def getWinningTeam(json: Json): Int =
+    json.hcursor.downField("teams").as[List[Json]].toOption.get.find(_.hcursor.get[String]("win").exists(_ == "Win")).get.hcursor.get[Int]("teamId").toOption.get
+
+  def getPhilsParticipantId(json: Json): Int =
+    json.hcursor.downField("participantIdentities").as[List[Json]].toOption.get.find(_.hcursor.downField("player").get[String]("accountId").exists(_ == accountId)).get.hcursor.get[Int]("participantId").toOption.get
+
+  val accountId = "PPkuQSbweA7FEuJUoxhsaNAsOcLncMW8ML1Z0saBo5ge2A"
+  val token = "RGAPI-4f0b728b-be4d-4ff3-a95a-13af38b05bad"
 
   def handleEvents(discordClient: DiscordClient): Event => IO[Unit] = {
     case MessageCreate(BasicMessage("ping", _, channelId)) => discordClient.sendMessage("pong", channelId).void
