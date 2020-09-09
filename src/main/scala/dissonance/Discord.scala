@@ -56,8 +56,8 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
       .map(_.withQueryParam("v", 6).withQueryParam("encoding", "json"))
 
   private def processEvents(uri: Uri, intents: List[Intent], state: DiscordState): Stream[IO, Event] =
-    (connection(uri) zip heartbeatInterval).flatMap {
-      case (connection, interval) => events(connection, intents, state, interval)
+    (connection(uri) zip heartbeatInterval).flatMap { case (connection, interval) =>
+      events(connection, intents, state, interval)
     }.repeat
 
   private def events(connection: WSConnectionHighLevel[IO], intents: List[Intent], state: DiscordState, interval: HeartbeatInterval): Stream[IO, Event] = {
