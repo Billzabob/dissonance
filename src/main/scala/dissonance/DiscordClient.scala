@@ -19,7 +19,7 @@ import org.http4s.client.Client
 import org.http4s.client.dsl.io._
 import org.http4s.client.jdkhttpclient.JdkHttpClient
 
-class DiscordClient(token: String, client: Client[IO]) {
+class DiscordClient(token: String, val client: Client[IO]) {
 
   def sendMessage(message: String, channelId: Snowflake, tts: Boolean = false): IO[Message] =
     client
