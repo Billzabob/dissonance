@@ -38,8 +38,13 @@ case class Embed(
   def withAuthor(author: Author)           = copy(author = author.some)
   def addField(field: Field) =
     copy(fields = fields match {
-      case Some(fields) => fields.prepend(field).some
+      case Some(fields) => fields.append(field).some
       case None         => NonEmptyList.one(field).some
+    })
+  def addFields(newFields: Field*) =
+    copy(fields = fields match {
+      case Some(fields) => (fields ++ newFields.toList).some
+      case None         => NonEmptyList.fromList(newFields.toList)
     })
 }
 

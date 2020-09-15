@@ -10,7 +10,7 @@ object TestUtils {
     val acquire = IO.shift *> IO(Source.fromURL(getClass.getResource(path)))
 
     acquire.bracket { in =>
-      IO(in.getLines.toList)
+      IO(in.getLines().toList)
     } { in =>
       IO(in.close()).void
     }
