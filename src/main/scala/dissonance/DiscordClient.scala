@@ -13,7 +13,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax._
 import io.circe.{Encoder, Json}
 import org.http4s.Method._
-import org.http4s.Status
+import org.http4s.{Headers, Request, Status}
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.client.Client
 import org.http4s.client.dsl.io._
@@ -45,6 +45,17 @@ class DiscordClient(token: String, val client: Client[IO]) {
           headers(token)
         )
       )
+
+  def createReaction(channelId: Snowflake, messageId: Snowflake, emoji: String): IO[Unit] =
+    client
+      .expect[Unit](
+        Request[IO](
+          method = PUT,
+          uri = apiEndpoint.addPath(s"channels/$channelId/messages/$messageId/reactions/$emoji/@me"),
+          headers = Headers.of(headers(token))
+        )
+      )
+      .handleErrorWith(_ => IO.unit) // Throws: java.io.IOException: unexpected content length header with 204 response
 
   def createWebhook(name: String, avatar: Option[ImageDataUri], channelId: Snowflake): IO[Webhook] =
     client

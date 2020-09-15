@@ -6,8 +6,8 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 
 case class Emoji(
-    id: Snowflake,
-    name: String,
+    id: Option[Snowflake],
+    name: Option[String],
     roles: Option[List[guild.Role]],
     user: Option[User],
     requireColons: Option[Boolean],

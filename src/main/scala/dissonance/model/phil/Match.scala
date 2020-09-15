@@ -3,7 +3,7 @@ package dissonance.model.phil
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 
-case class Match(gameId: Long, participants: List[Participant], participantIdentities: List[ParticipantIdentity], gameDuration: Int) {
+case class Match(gameId: Long, queueId: Int, participants: List[Participant], participantIdentities: List[ParticipantIdentity], gameDuration: Int) {
   def player(accountId: String): Participant = {
     val result = for {
       pId <- participantIdentities.find(_.player.accountId == accountId)

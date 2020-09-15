@@ -28,7 +28,7 @@ import org.http4s.implicits._
 import org.http4s.Method._
 import scala.concurrent.duration._
 
-class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(implicit cs: ContextShift[IO], t: Timer[IO]) {
+class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])(implicit cs: ContextShift[IO], t: Timer[IO]) {
 
   val client = new DiscordClient(token, httpClient)
 
