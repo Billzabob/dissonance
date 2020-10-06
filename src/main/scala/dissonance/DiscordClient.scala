@@ -57,6 +57,16 @@ class DiscordClient(token: String, client: Client[IO]) {
       )
       .handleErrorWith(_ => IO.unit) // Throws: java.io.IOException: unexpected content length header with 204 response
 
+  def getChannelMessage(channelId: Snowflake, messageId: Snowflake): IO[Message] = {
+    client
+      .expect[Message](
+        GET(
+          apiEndpoint.addPath(s"channels/$channelId/messages/$messageId"),
+          headers(token)
+        )
+      )
+  }
+
   def createWebhook(name: String, avatar: Option[ImageDataUri], channelId: Snowflake): IO[Webhook] =
     client
       .expect[Webhook](
