@@ -34,9 +34,10 @@ object Main extends IOApp {
             .evalTap(game => sendGameInfo(game, discord.client, literallyJustNudesChannelId))
             .map(_.rank)
             .zipWithPrevious
+            .debug()
             .collect { case (Some(a), b) if a != b => (a, b) }
             .evalTap { case (previousRank, newRank) => sendRankInfo(previousRank, newRank, discord.client, iveGotNothingChannelId) }
-            .handleErrorWith(e => Stream.eval_(IO(println("Client " + e))))
+            .mask
             .repeat
 
         val events = discord
@@ -70,7 +71,7 @@ object Main extends IOApp {
       .withThumbnail(Image(Some(gameInfo.champImage), None, None, None))
       .addFields(
         Field("KDA", s"${stats.kills}/${stats.deaths}/${stats.assists}", false.some),
-        Field("DPM", (stats.totalDamageDealtToChampions * 60 / gameInfo.game.gameDuration).toString, true.some),
+        Field("DMG%", "%.1f%%".format(gameInfo.game.damagePercentage(accountId) * 100), true.some),
         Field("CSPM", "%.1f".format((stats.totalMinionsKilled + stats.neutralMinionsKilled) * 60 / gameInfo.game.gameDuration.toDouble), true.some),
         Field("GPM", (stats.goldEarned * 60 / gameInfo.game.gameDuration).toString, true.some),
         Field("Vision Score", stats.visionScore.toString, false.some),
@@ -131,10 +132,10 @@ object Main extends IOApp {
         uri = uri"https://na1.api.riotgames.com/lol".addPath(path),
         headers = Headers.of(Header("X-Riot-Token", riotToken))
       )
-    )
+    ).handleErrorWith(e => IO(println(s"Error getting from $path:\n$e")) *> IO.raiseError(e))
 
   def getChampionImageUrlForId(id: Int, client: Client[IO]): IO[Uri] = for {
-    json       <- client.expect[Json](Request[IO](uri = uri"http://ddragon.leagueoflegends.com/cdn/10.19.1/data/en_US/champion.json"))
+    json       <- client.expect[Json](Request[IO](uri = uri"http://ddragon.leagueoflegends.com/cdn/10.19.1/data/en_US/champion.json")).handleErrorWith(e => IO(println(s"Error getting data dragon:\n$e")) *> IO.raiseError(e))
     keys       <- json.hcursor.downField("data").keys.liftTo[IO](new Throwable("data field was not an object somehow"))
     maybeKey   <- keys.toList.findM(key => json.hcursor.downField("data").downField(key).get[String]("key").map(_ == id.toString)).liftTo[IO]
     key        <- maybeKey.liftTo[IO](new Throwable(s"Could not find champion data with id: $id"))
@@ -143,9 +144,10 @@ object Main extends IOApp {
 
   def handleEvents(discordClient: DiscordClient): Event => IO[Unit] = {
     case MessageCreate(BasicMessage(_, "phildo", _, channelId)) => getMostRecentGame(discordClient.client).flatMap(game => sendGameInfo(game, discordClient, channelId))
+    case MessageCreate(BasicMessage(_, "philbo", _, channelId)) => sendRankInfo("fake rank 1", "fake rank 2", discordClient, channelId)
     case MessageCreate(m) if m.embeds.exists(_.title.exists(_.contains("RANK HAS CHANGED"))) =>
       List("🇵", "🇴", "🇬", ":smug_phil:756646030744748032", ":pepe_jedi:673963292477358102", ":aww_yeah:674324758082355291", ":cat_dance:673961665309442048").traverse_(emoji =>
-        discordClient.createReaction(m.channelId, m.id, emoji)
+        discordClient.createReaction(m.channelId, m.id, emoji) *> IO.sleep(200.millis)
       )
     case _ => IO.unit
   }
