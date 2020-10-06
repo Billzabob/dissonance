@@ -1,6 +1,6 @@
 package dissonance.model.phil
 
-import cats.implicits._
+import cats.syntax.all._
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 

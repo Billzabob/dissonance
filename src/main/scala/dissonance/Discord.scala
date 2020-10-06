@@ -2,7 +2,7 @@ package dissonance
 
 import cats.effect._
 import cats.effect.concurrent._
-import cats.implicits._
+import cats.syntax.all._
 import dissonance.Discord._
 import dissonance.model._
 import dissonance.model.ControlMessage._

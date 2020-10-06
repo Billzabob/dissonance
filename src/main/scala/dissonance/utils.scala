@@ -1,7 +1,7 @@
 package dissonance
 
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import java.net.http.HttpClient
 import scala.concurrent.duration._
 
