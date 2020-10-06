@@ -105,7 +105,7 @@ class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])
 
   private def checkForGracefulClose(closeFrame: Close): Either[Throwable, Unit] =
     closeFrame match {
-      case Close(1000, _) =>
+      case Close(1000, _) | Close(1006, _) =>
         ().asRight
       case Close(status, reason) =>
         ConnectionClosedWithError(status, reason).asLeft
