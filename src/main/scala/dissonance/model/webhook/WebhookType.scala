@@ -1,6 +1,6 @@
 package dissonance.model.webhook
 
-import cats.implicits._
+import cats.syntax.all._
 import enumeratum._
 import io.circe.{Decoder, Encoder}
 

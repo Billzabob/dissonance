@@ -1,6 +1,6 @@
 package dissonance.model.message
 
-import cats.implicits._
+import cats.syntax.all._
 import dissonance.model.embed.Embed
 import dissonance.model.Snowflake
 import io.circe.Decoder
