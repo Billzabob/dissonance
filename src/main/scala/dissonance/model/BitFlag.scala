@@ -1,6 +1,6 @@
 package dissonance.model
 
-import cats.implicits._
+import cats.syntax.all._
 import enumeratum.{Enum, EnumEntry}
 import io.circe.{Decoder, Encoder}
 

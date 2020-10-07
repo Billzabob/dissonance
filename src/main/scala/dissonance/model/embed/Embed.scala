@@ -1,7 +1,7 @@
 package dissonance.model.embed
 
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.syntax.all._
 import dissonance.model.{Color, Timestamp}
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.Configuration

@@ -1,7 +1,7 @@
 package dissonance.model.user
 
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import dissonance.model.DiscordId
 import dissonance.model.user.PremiumType.NitroClassic
 import dissonance.model.user.Role.HouseBravery

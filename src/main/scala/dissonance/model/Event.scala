@@ -1,6 +1,6 @@
 package dissonance.model
 
-import cats.implicits._
+import cats.syntax.all._
 import dissonance.model.channel.Channel
 import dissonance.model.guild.Guild
 import dissonance.model.message.Message
@@ -65,7 +65,7 @@ object Event {
   case class MessageReactionRemoveEmoji(channelId: Snowflake, messageId: Snowflake, guildId: Option[Snowflake], emoji: Emoji)                                          extends Event
   case class MessageUpdate(update: message.Update)                                                                                                                     extends Event
   case class PresenceUpdate(presence: Presence)                                                                                                                        extends Event
-  case class Ready(v: Integer, user: User, sessionId: String, shard: Option[(Int, Int)])                                                                               extends Event // TODO: Parse the 2 element array into a case class instead of tuple
+  case class Ready(v: Int, user: User, sessionId: String, shard: Option[(Int, Int)])                                                                                   extends Event // TODO: Parse the 2 element array into a case class instead of tuple
   case object Resumed                                                                                                                                                  extends Event
   case class TypingStart(channelId: Snowflake, guildId: Option[Snowflake], userId: Snowflake, timestamp: Timestamp, member: Option[guild.Member])                      extends Event
   case class UserUpdate(user: User)                                                                                                                                    extends Event

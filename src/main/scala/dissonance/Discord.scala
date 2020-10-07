@@ -2,7 +2,7 @@ package dissonance
 
 import cats.effect._
 import cats.effect.concurrent._
-import cats.implicits._
+import cats.syntax.all._
 import dissonance.Discord._
 import dissonance.model._
 import dissonance.model.ControlMessage._
@@ -28,7 +28,7 @@ import org.http4s.implicits._
 import org.http4s.Method._
 import scala.concurrent.duration._
 
-class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(implicit cs: ContextShift[IO], t: Timer[IO]) {
+class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])(implicit cs: ContextShift[IO], t: Timer[IO]) {
 
   val client = new DiscordClient(token, httpClient)
 
@@ -105,7 +105,7 @@ class Discord(token: String, httpClient: Client[IO], wsClient: WSClient[IO])(imp
 
   private def checkForGracefulClose(closeFrame: Close): Either[Throwable, Unit] =
     closeFrame match {
-      case Close(1000, _) =>
+      case Close(1000, _) | Close(1006, _) =>
         ().asRight
       case Close(status, reason) =>
         ConnectionClosedWithError(status, reason).asLeft

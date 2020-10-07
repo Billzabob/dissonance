@@ -1,6 +1,6 @@
 package dissonance.model
 
-import cats.implicits._
+import cats.syntax.all._
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
