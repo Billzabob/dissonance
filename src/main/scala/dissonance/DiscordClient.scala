@@ -12,14 +12,16 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax._
 import io.circe.{Encoder, Json}
+import java.io.File
 import org.http4s.Method._
-import org.http4s.{Headers, Request, Status}
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.client.Client
 import org.http4s.client.dsl.io._
 import org.http4s.client.jdkhttpclient.JdkHttpClient
+import org.http4s.multipart.{Multipart, Part}
+import org.http4s.{Headers, Request, Status}
 
-class DiscordClient(token: String, client: Client[IO]) {
+class DiscordClient(token: String, client: Client[IO])(implicit cs: ContextShift[IO]) {
 
   def sendMessage(message: String, channelId: Snowflake, tts: Boolean = false): IO[Message] =
     client
@@ -45,6 +47,17 @@ class DiscordClient(token: String, client: Client[IO]) {
           headers(token)
         )
       )
+
+  def sendFile(file: File, channelId: Snowflake, blocker: Blocker): IO[Message] = {
+    val multipart = Multipart[IO](Vector(Part.fileData[IO]("file", file, blocker)))
+    client.expect[Message](
+      POST(
+        multipart,
+        apiEndpoint.addPath(s"channels/$channelId/messages"),
+        (headers(token) :: multipart.headers.toList): _*
+      )
+    )
+  }
 
   def createReaction(channelId: Snowflake, messageId: Snowflake, emoji: String): IO[Unit] =
     client
