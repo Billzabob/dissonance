@@ -17,6 +17,7 @@ import fs2.Stream
 import io.circe.Json
 import io.circe.parser._
 import io.circe.syntax._
+import java.io.IOException
 import org.http4s.{headers => _, _}
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.client.Client
@@ -56,9 +57,14 @@ class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])
       .map(_.withQueryParam("v", 6).withQueryParam("encoding", "json"))
 
   private def processEvents(uri: Uri, intents: List[Intent], state: DiscordState): Stream[IO, Event] =
-    (connection(uri) zip heartbeatInterval).flatMap { case (connection, interval) =>
-      events(connection, intents, state, interval)
-    }.repeat
+    (connection(uri) zip heartbeatInterval)
+      .flatMap { case (connection, interval) =>
+        events(connection, intents, state, interval)
+      }
+      .recoverWith { case _: IOException =>
+        Stream.empty // We can get all sorts of random IO errors, all we can do is restart the connection
+      }
+      .repeat
 
   private def events(connection: WSConnectionHighLevel[IO], intents: List[Intent], state: DiscordState, interval: HeartbeatInterval): Stream[IO, Event] = {
     connection.receiveStream
@@ -72,7 +78,6 @@ class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])
       .takeWhile(result => !result.terminate)
       .collect { case Result(Some(event)) => event }
       .concurrently(heartbeat(connection, interval, state.sequenceNumber, state.acks))
-      .interruptWhen(connection.closeFrame.get.map(checkForGracefulClose))
   }
 
   private def handleEvents(
@@ -101,14 +106,6 @@ class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])
     sessionId.get.flatMap {
       case None     => identifyMessage(intents).pure[IO]
       case Some(id) => sequenceNumber.get.map(s => resumeMessage(id, s))
-    }
-
-  private def checkForGracefulClose(closeFrame: Close): Either[Throwable, Unit] =
-    closeFrame match {
-      case Close(1000, _) | Close(1006, _) =>
-        ().asRight
-      case Close(status, reason) =>
-        ConnectionClosedWithError(status, reason).asLeft
     }
 
   private def connection(uri: Uri): Stream[IO, WSConnectionHighLevel[IO]] =
