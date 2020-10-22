@@ -3,11 +3,11 @@ package dissonance
 import cats.effect._
 import dissonance.Discord._
 import dissonance.DiscordClient.WebhookMessage
-import dissonance.model.Snowflake
-import dissonance.model.embed.Embed
-import dissonance.model.imagedata.ImageDataUri
-import dissonance.model.message.Message
-import dissonance.model.webhook.Webhook
+import dissonance.data.Snowflake
+import dissonance.data.embed.Embed
+import dissonance.data.imagedata.ImageDataUri
+import dissonance.data.message.Message
+import dissonance.data.webhook.Webhook
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax._

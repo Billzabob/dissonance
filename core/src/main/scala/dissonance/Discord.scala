@@ -4,13 +4,13 @@ import cats.effect._
 import cats.effect.concurrent._
 import cats.syntax.all._
 import dissonance.Discord._
-import dissonance.model._
-import dissonance.model.ControlMessage._
-import dissonance.model.Errors._
-import dissonance.model.Event._
-import dissonance.model.gateway._
-import dissonance.model.identify.{Identify, IdentifyConnectionProperties}
-import dissonance.model.intents.Intent
+import dissonance.data._
+import dissonance.data.ControlMessage._
+import dissonance.data.Errors._
+import dissonance.data.Event._
+import dissonance.data.gateway._
+import dissonance.data.identify.{Identify, IdentifyConnectionProperties}
+import dissonance.data.intents.Intent
 import dissonance.utils._
 import fs2.concurrent.Queue
 import fs2.Stream

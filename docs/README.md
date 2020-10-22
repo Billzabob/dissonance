@@ -11,10 +11,10 @@ A Discord framework for Scala
 
 ```scala mdoc
 import cats.effect.{ExitCode, IO, IOApp}
-import dissonance.model.Event.MessageCreate
-import dissonance.model.intents.Intent
-import dissonance.model.message.BasicMessage
-import dissonance.model.Shard
+import dissonance.data.Event.MessageCreate
+import dissonance.data.intents.Intent
+import dissonance.data.message.BasicMessage
+import dissonance.data.Shard
 import dissonance.Discord
 
 object Main extends IOApp {

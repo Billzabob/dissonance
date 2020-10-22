@@ -1,10 +1,10 @@
-package dissonance.model.user
+package dissonance.data.user
 
 import cats.effect._
 import cats.syntax.all._
-import dissonance.model.DiscordId
-import dissonance.model.user.PremiumType.NitroClassic
-import dissonance.model.user.Role.HouseBravery
+import dissonance.data.DiscordId
+import dissonance.data.user.PremiumType.NitroClassic
+import dissonance.data.user.Role.HouseBravery
 import dissonance.TestUtils._
 import io.circe.parser._
 import org.scalatest.flatspec.AnyFlatSpec

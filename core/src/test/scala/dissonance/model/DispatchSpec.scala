@@ -1,4 +1,4 @@
-package dissonance.model
+package dissonance.data
 
 import cats.effect._
 import dissonance.TestUtils._
