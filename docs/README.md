@@ -10,6 +10,13 @@
 
 A Discord framework for Scala
 
+```scala
+// available for 2.12, 2.13
+libraryDependencies += "com.github.billzabob" %% "dissonance" % "version"
+```
+
+## Example
+
 ```scala mdoc
 import cats.effect.{ExitCode, IO, IOApp}
 import dissonance.data.events.MessageCreate
