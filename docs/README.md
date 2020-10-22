@@ -1,4 +1,4 @@
-<img align="right" src="https://github.com/Billzabob/dissonance/blob/master/src/main/resources/DissonanceLogo.png" height="150px" style="padding-left: 20px"/>
+<img align="right" src="https://github.com/Billzabob/dissonance/blob/master/core/src/main/resources/DissonanceLogo.png" height="150px" style="padding-left: 20px"/>
 
 
 [![](https://github.com/Billzabob/discord/workflows/build/badge.svg)](https://github.com/Billzabob/dissonance)
