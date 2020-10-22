@@ -11,7 +11,7 @@ A Discord framework for Scala
 
 ```scala mdoc
 import cats.effect.{ExitCode, IO, IOApp}
-import dissonance.data.Event.MessageCreate
+import dissonance.data.events.MessageCreate
 import dissonance.data.intents.Intent
 import dissonance.data.message.BasicMessage
 import dissonance.data.Shard

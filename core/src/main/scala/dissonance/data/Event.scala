@@ -15,7 +15,7 @@ import org.http4s.Uri
 
 sealed trait Event extends Product with Serializable
 
-object Event {
+object events {
   case class ChannelCreate(channel: Channel)                                                                       extends Event
   case class ChannelDelete(channel: Channel)                                                                       extends Event
   case class ChannelPinsUpdate(guildId: Snowflake, channelId: Snowflake, lastPinTimestamp: Option[OffsetDateTime]) extends Event

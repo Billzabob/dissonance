@@ -7,7 +7,7 @@ import dissonance.Discord._
 import dissonance.data._
 import dissonance.data.ControlMessage._
 import dissonance.data.Errors._
-import dissonance.data.Event._
+import dissonance.data.events._
 import dissonance.data.gateway._
 import dissonance.data.identify.{Identify, IdentifyConnectionProperties}
 import dissonance.data.intents.Intent
