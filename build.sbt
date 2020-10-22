@@ -39,6 +39,7 @@ lazy val commonSettings = Seq(
 
 lazy val releaseSettings = Seq(
   organization := "com.github.billzabob",
+  sonatypeProfileName := "com.github.billzabob",
   homepage := Some(url("https://github.com/billzabob/dissonance")),
   licenses := Seq("LGPL-3.0" -> url("https://www.gnu.org/licenses/lgpl-3.0.en.html")),
   developers := List(
