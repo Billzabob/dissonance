@@ -18,19 +18,18 @@ import dissonance.model.Shard
 import dissonance.Discord
 
 object Main extends IOApp {
-  override def run(args: List[String]): IO[ExitCode] = {
-    val token = args.head
-    Discord.make(token).use { discord =>
+  override def run(args: List[String]): IO[ExitCode] =
+    Discord.make(args.head).use { discord =>
       discord
         .subscribe(Shard.singleton, Intent.GuildMessages)
         .evalMap {
-          case MessageCreate(BasicMessage(_, "ping", _, channelId)) => discord.client.sendMessage("pong", channelId).void
-          case _                                                    => IO.unit
+          case MessageCreate(BasicMessage(_, "ping", _, channelId)) =>
+            discord.client.sendMessage("pong", channelId).void
+          case _ => IO.unit
         }
         .compile
         .drain
         .as(ExitCode.Success)
     }
-  }
 }
 ```
