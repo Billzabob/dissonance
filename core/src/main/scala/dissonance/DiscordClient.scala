@@ -33,6 +33,16 @@ class DiscordClient(token: String, client: Client[IO])(implicit cs: ContextShift
         )
       )
 
+  def deleteMessage(channelId: Snowflake, messageId: Snowflake): IO[Unit] =
+    client
+      .expect[Unit](
+        DELETE(
+          apiEndpoint.addPath(s"channels/$channelId/messages/$messageId"),
+          headers(token)
+        )
+      )
+      .handleErrorWith(_ => IO.unit) // Throws: java.io.IOException: unexpected content length header with 204 response
+
   def sendEmbed(embed: Embed, channelId: Snowflake): IO[Message] =
     client
       .expect[Message](
