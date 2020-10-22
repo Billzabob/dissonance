@@ -9,7 +9,7 @@
 
 A Discord framework for Scala
 
-```scala
+```scala mdoc
 import cats.effect.{ExitCode, IO, IOApp}
 import dissonance.model.Event.MessageCreate
 import dissonance.model.intents.Intent

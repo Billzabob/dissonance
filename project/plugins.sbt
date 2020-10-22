@@ -1,7 +1,6 @@
-addSbtPlugin("ch.epfl.scala"             % "sbt-missinglink"        % "0.3.1")      // Check for binary incompatibility in dependencies with `sbt missinglinkCheck`
-addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat"           % "0.1.14")     // Add extra compiler flags to prevent common mistakes
-addSbtPlugin("net.virtual-void"          % "sbt-dependency-graph"   % "0.10.0-RC1") // Get a dependency graph with `sbt dependencyTree`
-addSbtPlugin("org.jmotor.sbt"            % "sbt-dependency-updates" % "1.2.2")      // Check for dependency updates with `sbt dependencyUpdates`
-addSbtPlugin("org.scalameta"             % "sbt-scalafmt"           % "2.4.2")      // Format code with `sbt scalafmt`
-addSbtPlugin("org.scoverage"             % "sbt-scoverage"          % "1.6.1")      // Runs code coverage for the project `sbt coverage` https://github.com/scoverage/sbt-scoverage
-addSbtPlugin("com.geirsson"              % "sbt-ci-release"         % "1.5.3")      // Automatically publish to Sonatype and Maven Central
+addSbtPlugin("com.geirsson"              % "sbt-ci-release"  % "1.5.3")
+addSbtPlugin("com.typesafe"              % "sbt-mima-plugin" % "0.8.0")
+addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat"    % "0.1.14")
+addSbtPlugin("org.scalameta"             % "sbt-mdoc"        % "2.2.8")
+addSbtPlugin("org.scalameta"             % "sbt-scalafmt"    % "2.4.2")
+addSbtPlugin("org.scoverage"             % "sbt-scoverage"   % "1.6.1")

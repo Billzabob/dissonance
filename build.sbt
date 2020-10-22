@@ -1,7 +1,7 @@
 import Dependencies._
 
 lazy val core = project
-  .in(file("."))
+  .in(file("core"))
   .settings(commonSettings, releaseSettings)
   .settings(
     name := "dissonance",
@@ -10,6 +10,17 @@ lazy val core = project
     connectInput := true,                 // Connects stdin to sbt during forked runs
     outputStrategy := Some(StdoutOutput), // Get rid of output prefix
   )
+
+lazy val docs = project
+  .in(file("dissonance-docs"))
+  .settings(
+    commonSettings,
+    mdocIn := file("docs/README.md"),
+    mdocOut := file("README.md"),
+    publish / skip := true
+  )
+  .dependsOn(core)
+  .enablePlugins(MdocPlugin)
 
 lazy val commonSettings = Seq(
   organization := "com.snac",
