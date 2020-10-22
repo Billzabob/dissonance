@@ -23,7 +23,6 @@ lazy val docs = project
   .enablePlugins(MdocPlugin)
 
 lazy val commonSettings = Seq(
-  organization := "com.snac",
   scalaVersion := "2.13.3",
   crossScalaVersions := List(scalaVersion.value, "2.12.12"),
   scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
