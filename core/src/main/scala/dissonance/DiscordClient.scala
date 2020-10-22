@@ -1,13 +1,9 @@
 package dissonance
 
 import cats.effect._
+import dissonance.data._
 import dissonance.Discord._
 import dissonance.DiscordClient.WebhookMessage
-import dissonance.data.Snowflake
-import dissonance.data.embed.Embed
-import dissonance.data.imagedata.ImageDataUri
-import dissonance.data.message.Message
-import dissonance.data.webhook.Webhook
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax._

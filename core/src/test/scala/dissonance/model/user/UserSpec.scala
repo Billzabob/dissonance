@@ -1,10 +1,9 @@
-package dissonance.data.user
+package dissonance.data
 
 import cats.effect._
 import cats.syntax.all._
-import dissonance.data.DiscordId
-import dissonance.data.user.PremiumType.NitroClassic
-import dissonance.data.user.Role.HouseBravery
+import dissonance.data.PremiumType.{None => _, _}
+import dissonance.data.UserRole._
 import dissonance.TestUtils._
 import io.circe.parser._
 import org.scalatest.flatspec.AnyFlatSpec

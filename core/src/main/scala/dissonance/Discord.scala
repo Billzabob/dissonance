@@ -3,14 +3,10 @@ package dissonance
 import cats.effect._
 import cats.effect.concurrent._
 import cats.syntax.all._
-import dissonance.Discord._
 import dissonance.data._
 import dissonance.data.ControlMessage._
-import dissonance.data.Errors._
-import dissonance.data.events._
-import dissonance.data.gateway._
-import dissonance.data.identify.{Identify, IdentifyConnectionProperties}
-import dissonance.data.intents.Intent
+import dissonance.data.events.Ready
+import dissonance.Discord._
 import dissonance.utils._
 import fs2.concurrent.Queue
 import fs2.Stream
@@ -128,7 +124,7 @@ class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])
 
       // TODO: Something besides true, false
       (heartbeats.as(true) merge acks.dequeue.as(false)).zipWithPrevious.flatMap {
-        case (Some(true), true) => Stream.raiseError[IO](NoHeartbeatAck)
+        case (Some(true), true) => Stream.raiseError[IO](Errors.NoHeartbeatAck)
         case _                  => Stream.emit(())
       }
     }

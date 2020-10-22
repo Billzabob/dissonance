@@ -18,11 +18,8 @@ libraryDependencies += "com.github.billzabob" %% "dissonance" % "version"
 ## Example
 
 ```scala
-import cats.effect.{ExitCode, IO, IOApp}
-import dissonance.data.events.MessageCreate
-import dissonance.data.intents.Intent
-import dissonance.data.message.BasicMessage
-import dissonance.data.Shard
+import cats.effect._
+import dissonance.data._
 import dissonance.Discord
 
 object Main extends IOApp {
@@ -31,7 +28,7 @@ object Main extends IOApp {
       discord
         .subscribe(Shard.singleton, Intent.GuildMessages)
         .evalMap {
-          case MessageCreate(BasicMessage(_, "ping", _, channelId)) =>
+          case events.MessageCreate(BasicMessage(_, "ping", _, channelId)) =>
             discord.client.sendMessage("pong", channelId).void
           case _ => IO.unit
         }

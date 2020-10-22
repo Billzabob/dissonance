@@ -1,6 +1,5 @@
 <img align="right" src="https://github.com/Billzabob/dissonance/blob/master/core/src/main/resources/DissonanceLogo.png" height="150px" style="padding-left: 20px"/>
 
-
 [![](https://github.com/Billzabob/discord/workflows/build/badge.svg)](https://github.com/Billzabob/dissonance)
 [![](https://img.shields.io/discord/390751088829005826.svg?style=flat)](https://discordapp.com/invite/JXt4Zd)
 [![](https://codecov.io/gh/Billzabob/dissonance/branch/master/graph/badge.svg)](https://codecov.io/gh/Billzabob/dissonance)
@@ -18,11 +17,8 @@ libraryDependencies += "com.github.billzabob" %% "dissonance" % "version"
 ## Example
 
 ```scala mdoc
-import cats.effect.{ExitCode, IO, IOApp}
-import dissonance.data.events.MessageCreate
-import dissonance.data.intents.Intent
-import dissonance.data.message.BasicMessage
-import dissonance.data.Shard
+import cats.effect._
+import dissonance.data._
 import dissonance.Discord
 
 object Main extends IOApp {
@@ -31,7 +27,7 @@ object Main extends IOApp {
       discord
         .subscribe(Shard.singleton, Intent.GuildMessages)
         .evalMap {
-          case MessageCreate(BasicMessage(_, "ping", _, channelId)) =>
+          case events.MessageCreate(BasicMessage(_, "ping", _, channelId)) =>
             discord.client.sendMessage("pong", channelId).void
           case _ => IO.unit
         }

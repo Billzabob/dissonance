@@ -1,6 +1,5 @@
 package dissonance.data
 
-import dissonance.data.user.User
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
@@ -8,7 +7,7 @@ import io.circe.generic.extras.semiauto._
 case class Emoji(
     id: Option[Snowflake],
     name: Option[String],
-    roles: Option[List[guild.Role]],
+    roles: Option[List[GuildRole]],
     user: Option[User],
     requireColons: Option[Boolean],
     managed: Option[Boolean],
