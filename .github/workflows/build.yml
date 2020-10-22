@@ -10,6 +10,11 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scala:
+          - 2.12.12
+          - 2.13.3
 
     steps:
     - uses: actions/checkout@v2
@@ -17,9 +22,8 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
-    - name: Run tests
-      run: sbt clean coverage +test coverageReport
     - name: Check formatting
-      run: sbt scalafmtCheckAll
-    - name: Upload coverage
-      uses: codecov/codecov-action@v1
+      if: matrix.scala == '2.13.3'
+      run: sbt ++${{ matrix.scala }} scalafmtCheckAll
+    - name: Run tests
+      run: sbt ++${{ matrix.scala }} clean coverage test
