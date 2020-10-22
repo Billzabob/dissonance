@@ -19,6 +19,7 @@ libraryDependencies += "com.github.billzabob" %% "dissonance" % "version"
 ```scala mdoc
 import cats.effect._
 import dissonance.data._
+import dissonance.data.events._
 import dissonance.Discord
 
 object Main extends IOApp {
@@ -27,7 +28,7 @@ object Main extends IOApp {
       discord
         .subscribe(Shard.singleton, Intent.GuildMessages)
         .evalMap {
-          case events.MessageCreate(BasicMessage(_, "ping", _, channelId)) =>
+          case MessageCreate(BasicMessage(_, "ping", _, channelId)) =>
             discord.client.sendMessage("pong", channelId).void
           case _ => IO.unit
         }
