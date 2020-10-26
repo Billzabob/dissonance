@@ -76,7 +76,32 @@ class DiscordClient(token: String, client: Client[IO])(implicit cs: ContextShift
       )
       .handleErrorWith(_ => IO.unit) // Throws: java.io.IOException: unexpected content length header with 204 response
 
-  def getChannelMessage(channelId: Snowflake, messageId: Snowflake): IO[Message] = {
+  def addEmoji(guildId: Snowflake, name: String, emojiData: Array[Byte], roles: List[Snowflake] = Nil): IO[Emoji] = {
+    val imageData = "data:;base64," + fs2.Stream.emits(emojiData).through(fs2.text.base64.encode).compile.foldMonoid
+    client
+      .expect[Emoji](
+        POST(
+          Json.obj(
+            "name"  -> name.asJson,
+            "image" -> imageData.asJson,
+            "roles" -> roles.asJson
+          ),
+          apiEndpoint.addPath(s"guilds/$guildId/emojis"),
+          headers(token)
+        )
+      )
+  }
+
+  def listEmojis(guildId: Snowflake): IO[List[Emoji]] =
+    client
+      .expect[List[Emoji]](
+        GET(
+          apiEndpoint.addPath(s"guilds/$guildId/emojis"),
+          headers(token)
+        )
+      )
+
+  def getChannelMessage(channelId: Snowflake, messageId: Snowflake): IO[Message] =
     client
       .expect[Message](
         GET(
@@ -84,7 +109,6 @@ class DiscordClient(token: String, client: Client[IO])(implicit cs: ContextShift
           headers(token)
         )
       )
-  }
 
   def createWebhook(name: String, avatar: Option[ImageDataUri], channelId: Snowflake): IO[Webhook] =
     client

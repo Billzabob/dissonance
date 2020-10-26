@@ -29,6 +29,9 @@ class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])
 
   val client = new DiscordClient(token, httpClient)
 
+  def addMiddleware(middleware: Client[IO] => Client[IO]): Discord =
+    new Discord(token, middleware(httpClient), wsClient)
+
   def subscribe(shard: Shard, intents: Intent*): Stream[IO, Event] = subscribe(shard, intents.toList)
 
   def subscribe(shard: Shard, intents: List[Intent]): Stream[IO, Event] = {
