@@ -6,7 +6,7 @@ object Dependencies {
     val fs2             = "2.4.5"
     val cats            = "2.2.0"
     val circe           = "0.13.0"
-    val http4s          = "0.21.8"
+    val http4s          = "0.21.9"
     val newtype         = "0.4.4"
     val refined         = "0.9.17"
     val scalaTest       = "3.2.3"
