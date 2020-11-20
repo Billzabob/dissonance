@@ -3,13 +3,13 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val fs2             = "2.4.4"
+    val fs2             = "2.4.5"
     val cats            = "2.2.0"
     val circe           = "0.13.0"
-    val http4s          = "0.21.8"
+    val http4s          = "0.21.11"
     val newtype         = "0.4.4"
-    val refined         = "0.9.17"
-    val scalaTest       = "3.2.2"
+    val refined         = "0.9.18"
+    val scalaTest       = "3.2.3"
     val catsEffect      = "2.2.0"
     val enumeratum      = "1.6.1"
     val websocketClient = "0.3.1"
