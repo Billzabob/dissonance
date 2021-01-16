@@ -38,7 +38,7 @@ lazy val commonSettings = Seq(
     case _                       => Nil
   }) ++ dependencies,
   addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
-  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.11.2" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.11.3" cross CrossVersion.full),
 )
 
 lazy val releaseSettings = Seq(
