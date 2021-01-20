@@ -12,7 +12,7 @@ object Dependencies {
     val scalaTest       = "3.2.3"
     val catsEffect      = "2.3.1"
     val enumeratum      = "1.6.1"
-    val websocketClient = "0.3.3"
+    val websocketClient = "0.3.4"
   }
 
   object Compile {
