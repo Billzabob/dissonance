@@ -4,13 +4,13 @@ object Dependencies {
 
   object Versions {
     val fs2             = "2.5.0"
-    val cats            = "2.3.1"
+    val cats            = "2.4.0"
     val circe           = "0.13.0"
     val http4s          = "0.21.18"
     val newtype         = "0.4.4"
     val refined         = "0.9.20"
     val scalaTest       = "3.2.3"
-    val catsEffect      = "2.3.1"
+    val catsEffect      = "2.4.0"
     val enumeratum      = "1.6.1"
     val websocketClient = "0.3.5"
   }
