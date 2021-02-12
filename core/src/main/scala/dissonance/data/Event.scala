@@ -38,6 +38,16 @@ object events {
   case class GuildRoleDelete(guildId: Snowflake, roleId: Snowflake)                                                                                extends Event
   case class GuildRoleUpdate(guildId: Snowflake, role: GuildRole)                                                                                  extends Event
   case class GuildUpdate(guild: Guild)                                                                                                             extends Event
+  case class InteractionCreate(
+    id: Snowflake,
+    `type`: InteractionType,
+    data: ApplicationCommandInteractionData,
+    guild_id: Snowflake,
+    channel_id: Snowflake,
+    member: Member,
+    token: String,
+    version: Int
+  ) extends Event
   case class InviteCreate(
       channelId: Snowflake,
       code: String,
@@ -84,6 +94,7 @@ object Event {
   implicit val guildRoleCreateDecoder: Decoder[GuildRoleCreate]                = deriveConfiguredDecoder
   implicit val guildRoleDeleteDecoder: Decoder[GuildRoleDelete]                = deriveConfiguredDecoder
   implicit val guildRoleUpdateDecoder: Decoder[GuildRoleUpdate]                = deriveConfiguredDecoder
+  implicit val interactionCreate: Decoder[InteractionCreate]                   = deriveConfiguredDecoder
   implicit val inviteCreateDecoder: Decoder[InviteCreate]                      = deriveConfiguredDecoder
   implicit val inviteDeleteDecoder: Decoder[InviteDelete]                      = deriveConfiguredDecoder
   implicit val messageDelete: Decoder[MessageDelete]                           = deriveConfiguredDecoder
@@ -119,6 +130,7 @@ object Event {
       case "GUILD_ROLE_CREATE"             => data.as[GuildRoleCreate]
       case "GUILD_ROLE_UPDATE"             => data.as[GuildRoleUpdate]
       case "GUILD_ROLE_DELETE"             => data.as[GuildRoleDelete]
+      case "INTERACTION_CREATE"            => data.as[InteractionCreate]
       case "INVITE_CREATE"                 => data.as[InviteCreate]
       case "INVITE_DELETE"                 => data.as[InviteDelete]
       case "MESSAGE_CREATE"                => data.as[Message].map(MessageCreate)

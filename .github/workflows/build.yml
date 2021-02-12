@@ -13,8 +13,8 @@ jobs:
     strategy:
       matrix:
         scala:
-          - 2.12.12
-          - 2.13.3
+          - 2.12.13
+          - 2.13.4
 
     steps:
     - uses: actions/checkout@v2
@@ -23,7 +23,7 @@ jobs:
       with:
         java-version: 11
     - name: Check formatting
-      if: matrix.scala == '2.13.3'
+      if: matrix.scala == '2.13.4'
       run: sbt ++${{ matrix.scala }} scalafmtCheckAll
     - name: Run tests
       run: sbt ++${{ matrix.scala }} clean coverage test

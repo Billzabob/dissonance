@@ -2,7 +2,6 @@ package dissonance.data
 
 import cats.data.NonEmptyList
 import cats.syntax.all._
-
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
@@ -22,7 +21,7 @@ case class Embed(
     video: Option[Video],
     provider: Option[Provider],
     author: Option[Author],
-    fields: Option[NonEmptyList[Field]]
+    fields: Option[NonEmptyList[Field]] // TODO: Change all Option[List[A]] to Option[NonEmptyList[A]]?
 ) {
   def withTitle(title: String)             = copy(title = title.some)
   def withType(`type`: EmbedType)          = copy(`type` = `type`.some)
