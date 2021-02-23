@@ -39,14 +39,14 @@ object events {
   case class GuildRoleUpdate(guildId: Snowflake, role: GuildRole)                                                                                  extends Event
   case class GuildUpdate(guild: Guild)                                                                                                             extends Event
   case class InteractionCreate(
-    id: Snowflake,
-    `type`: InteractionType,
-    data: ApplicationCommandInteractionData,
-    guild_id: Snowflake,
-    channel_id: Snowflake,
-    member: Member,
-    token: String,
-    version: Int
+      id: Snowflake,
+      `type`: InteractionType,
+      data: ApplicationCommandInteractionData,
+      guild_id: Snowflake,
+      channel_id: Snowflake,
+      member: Member,
+      token: String,
+      version: Int
   ) extends Event
   case class InviteCreate(
       channelId: Snowflake,

@@ -53,7 +53,7 @@ class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])
       .map(_.url)
       .map(Uri.fromString)
       .rethrow
-      .map(_.withQueryParam("v", 6).withQueryParam("encoding", "json"))
+      .map(_.withQueryParam("v", 8).withQueryParam("encoding", "json"))
 
   private def processEvents(uri: Uri, shard: Shard, intents: List[Intent], state: DiscordState): Stream[IO, Event] =
     (connection(uri) zip heartbeatInterval)

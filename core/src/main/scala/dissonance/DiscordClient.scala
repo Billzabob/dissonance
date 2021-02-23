@@ -54,6 +54,16 @@ class DiscordClient(token: String, client: Client[IO])(implicit cs: ContextShift
         )
       )
 
+  def sendInteractionResponse(interactionResponse: InteractionResponse, interactionId: Snowflake, interactionToken: String): IO[Unit] =
+    client
+      .expect[Unit](
+        POST(
+          interactionResponse,
+          apiEndpoint.addPath(s"v8/interactions/$interactionId/$interactionToken/callback")
+        )
+      )
+      .handleErrorWith(_ => IO.unit) // Throws: java.io.IOException: unexpected content length header with 204 response
+
   def sendEmbedWithFileImage(embed: Embed, file: File, channelId: Snowflake, blocker: Blocker): IO[Message] = {
     val multipart = Multipart[IO](
       Vector(
