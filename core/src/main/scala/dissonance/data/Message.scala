@@ -29,7 +29,8 @@ case class Message(
     activity: Option[MessageActivity],
     application: Option[Application],
     messageReference: Option[Reference],
-    flags: Option[List[MessageFlag]]
+    flags: Option[List[MessageFlag]],
+    referencedMessage: Option[Message]
 )
 
 object Message {

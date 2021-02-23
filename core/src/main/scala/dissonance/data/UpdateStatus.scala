@@ -6,7 +6,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 
 case class UpdateStatus(
     since: Option[Int],
-    game: Option[Activity],
+    activities: Option[List[Activity]],
     status: Status,
     afk: Boolean
 )

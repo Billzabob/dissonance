@@ -17,8 +17,6 @@ case class Guild(
     region: String,
     afkChannelId: Option[Snowflake],
     afkTimeout: Integer,
-    embedEnabled: Option[Boolean],
-    embedChannelId: Option[Snowflake],
     verificationLevel: Int,
     defaultMessageNotifications: Int,
     explicitContentFilter: Int,
