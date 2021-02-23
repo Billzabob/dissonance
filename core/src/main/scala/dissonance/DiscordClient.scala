@@ -15,7 +15,7 @@ import org.http4s.client.Client
 import org.http4s.client.dsl.io._
 import org.http4s.client.jdkhttpclient.JdkHttpClient
 import org.http4s.multipart.{Multipart, Part}
-import org.http4s.{Headers, Request, Status}
+import org.http4s.{Headers, Uri, Request, Status}
 
 class DiscordClient(token: String, client: Client[IO])(implicit cs: ContextShift[IO]) {
 
@@ -53,6 +53,22 @@ class DiscordClient(token: String, client: Client[IO])(implicit cs: ContextShift
           headers(token)
         )
       )
+
+  def sendEmbedWithFileImage(embed: Embed, file: File, channelId: Snowflake, blocker: Blocker): IO[Message] = {
+    val multipart = Multipart[IO](
+      Vector(
+        Part.fileData[IO]("file", file, blocker),
+        Part.formData("payload_json", Json.obj("embed" -> embed.withImage(Image(Some(Uri.unsafeFromString(s"attachment://${file.getName}")), None, None, None)).asJson).noSpaces)
+      )
+    )
+    client.expect[Message](
+      POST(
+        multipart,
+        apiEndpoint.addPath(s"channels/$channelId/messages"),
+        (headers(token) :: multipart.headers.toList): _*
+      )
+    )
+  }
 
   def sendFile(file: File, channelId: Snowflake, blocker: Blocker): IO[Message] = {
     val multipart = Multipart[IO](Vector(Part.fileData[IO]("file", file, blocker)))
