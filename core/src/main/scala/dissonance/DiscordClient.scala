@@ -59,7 +59,7 @@ class DiscordClient(token: String, client: Client[IO])(implicit cs: ContextShift
       .expect[Unit](
         POST(
           interactionResponse,
-          apiEndpoint.addPath(s"v8/interactions/$interactionId/$interactionToken/callback")
+          apiEndpoint.addPath(s"interactions/$interactionId/$interactionToken/callback")
         )
       )
       .handleErrorWith(_ => IO.unit) // Throws: java.io.IOException: unexpected content length header with 204 response

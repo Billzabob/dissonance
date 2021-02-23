@@ -153,7 +153,7 @@ object Discord {
   def make(token: String)(implicit cs: ContextShift[IO], t: Timer[IO]): Resource[IO, Discord] =
     Resource.liftF(utils.javaClient.map(javaClient => new Discord(token, JdkHttpClient[IO](javaClient), JdkWSClient[IO](javaClient))))
 
-  val apiEndpoint                           = uri"https://discordapp.com/api"
+  val apiEndpoint                           = uri"https://discordapp.com/api/v8"
   def headers(token: String): Authorization = Authorization(Credentials.Token("Bot".ci, token))
 
   type SequenceNumber    = Ref[IO, Option[Int]]
