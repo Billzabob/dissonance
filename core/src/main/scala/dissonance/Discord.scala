@@ -53,7 +53,7 @@ class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])
       .map(_.url)
       .map(Uri.fromString)
       .rethrow
-      .map(_.withQueryParam("v", 6).withQueryParam("encoding", "json"))
+      .map(_.withQueryParam("v", 8).withQueryParam("encoding", "json"))
 
   private def processEvents(uri: Uri, shard: Shard, intents: List[Intent], state: DiscordState): Stream[IO, Event] =
     (connection(uri) zip heartbeatInterval)
@@ -153,7 +153,7 @@ object Discord {
   def make(token: String)(implicit cs: ContextShift[IO], t: Timer[IO]): Resource[IO, Discord] =
     Resource.liftF(utils.javaClient.map(javaClient => new Discord(token, JdkHttpClient[IO](javaClient), JdkWSClient[IO](javaClient))))
 
-  val apiEndpoint                           = uri"https://discordapp.com/api"
+  val apiEndpoint                           = uri"https://discordapp.com/api/v8"
   def headers(token: String): Authorization = Authorization(Credentials.Token("Bot".ci, token))
 
   type SequenceNumber    = Ref[IO, Option[Int]]

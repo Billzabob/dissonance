@@ -20,6 +20,8 @@ object MessageType {
   case object ChannelFollowAdd                  extends MessageType
   case object GuildDiscoveryDisqualified        extends MessageType
   case object GuildDiscoveryRequalified         extends MessageType
+  case object Reply                             extends MessageType
+  case object ApplicationCommand                extends MessageType
 
   implicit val messageTypeDecoder: Decoder[MessageType] = Decoder[Int].emap {
     case 0     => Right(Default)
@@ -37,6 +39,8 @@ object MessageType {
     case 12    => Right(ChannelFollowAdd)
     case 14    => Right(GuildDiscoveryDisqualified)
     case 15    => Right(GuildDiscoveryRequalified)
+    case 19    => Right(Reply)
+    case 20    => Right(ApplicationCommand)
     case other => Left(s"Unknown message type ID: $other")
   }
 }
