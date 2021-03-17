@@ -15,7 +15,7 @@ case class InteractionApplicationCommandCallbackData(
   def withContent(content: String) = copy(content = content)
   def addEmbed(embed: Embed) =
     copy(embeds = embeds match {
-      case Some(embeds) => embeds.appended(embed).some
+      case Some(embeds) => (embeds :+ embed).some
       case None         => List(embed).some
     })
   def addEmbeds(newEmbeds: Embed*) =
@@ -25,7 +25,7 @@ case class InteractionApplicationCommandCallbackData(
     })
   def addFlag(flag: InteractionCallbackFlag) =
     copy(flags = flags match {
-      case Some(flags) => flags.appended(flag).some
+      case Some(flags) => (flags :+ flag).some
       case None        => List(flag).some
     })
   def addFlags(newFlags: InteractionCallbackFlag*) =

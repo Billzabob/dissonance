@@ -14,6 +14,6 @@ jobs:
       with:
         java-version: 11
     - name: Generate code coverage
-      run: sbt ++2.13.4 'project core' clean coverage test coverageReport
+      run: sbt ++2.13.5 'project core' clean coverage test coverageReport
     - name: Upload coverage
       uses: codecov/codecov-action@v1
