@@ -151,7 +151,7 @@ class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])
 
 object Discord {
   def make(token: String)(implicit cs: ContextShift[IO], t: Timer[IO]): Resource[IO, Discord] =
-    Resource.liftF(utils.javaClient.map(javaClient => new Discord(token, JdkHttpClient[IO](javaClient), JdkWSClient[IO](javaClient))))
+    Resource.eval(utils.javaClient.map(javaClient => new Discord(token, JdkHttpClient[IO](javaClient), JdkWSClient[IO](javaClient))))
 
   val apiEndpoint                           = uri"https://discordapp.com/api/v8"
   def headers(token: String): Authorization = Authorization(Credentials.Token("Bot".ci, token))
