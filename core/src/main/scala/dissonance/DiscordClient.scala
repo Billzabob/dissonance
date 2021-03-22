@@ -249,7 +249,7 @@ class DiscordClient(token: String, client: Client[IO])(implicit cs: ContextShift
 
 object DiscordClient {
   def make(token: String)(implicit cs: ContextShift[IO]): Resource[IO, DiscordClient] =
-    Resource.liftF(utils.javaClient.map(javaClient => new DiscordClient(token, JdkHttpClient[IO](javaClient))))
+    Resource.eval(utils.javaClient.map(javaClient => new DiscordClient(token, JdkHttpClient[IO](javaClient))))
 
   type AllowedMentions = Unit // TODO: Implement this
 
