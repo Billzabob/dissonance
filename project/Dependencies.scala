@@ -9,7 +9,7 @@ object Dependencies {
     val http4s          = "0.21.21"
     val newtype         = "0.4.4"
     val refined         = "0.9.22"
-    val scalaTest       = "3.2.6"
+    val scalaTest       = "3.2.7"
     val catsEffect      = "2.4.1"
     val enumeratum      = "1.6.1"
     val websocketClient = "0.3.6"
