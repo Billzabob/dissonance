@@ -24,8 +24,9 @@ import org.http4s.headers._
 import org.http4s.implicits._
 import org.http4s.Method._
 import scala.concurrent.duration._
+import cats.effect.{ Deferred, Ref, Temporal }
 
-class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])(implicit cs: ContextShift[IO], t: Timer[IO]) {
+class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])(implicit cs: ContextShift[IO], t: Temporal[IO]) {
 
   val client = new DiscordClient(token, httpClient)
 
@@ -150,7 +151,7 @@ class Discord(token: String, val httpClient: Client[IO], wsClient: WSClient[IO])
 }
 
 object Discord {
-  def make(token: String)(implicit cs: ContextShift[IO], t: Timer[IO]): Resource[IO, Discord] =
+  def make(token: String)(implicit t: Temporal[IO]): Resource[IO, Discord] =
     Resource.eval(utils.javaClient.map(javaClient => new Discord(token, JdkHttpClient[IO](javaClient), JdkWSClient[IO](javaClient))))
 
   val apiEndpoint                           = uri"https://discordapp.com/api/v8"

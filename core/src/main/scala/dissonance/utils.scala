@@ -4,11 +4,12 @@ import cats.effect._
 import cats.syntax.all._
 import java.net.http.HttpClient
 import scala.concurrent.duration._
+import cats.effect.Temporal
 
 object utils {
   def putStrLn(s: String): IO[Unit] = IO(println(s))
 
-  def fakeResource(i: Int, duration: FiniteDuration)(implicit T: Timer[IO]) =
+  def fakeResource(i: Int, duration: FiniteDuration)(implicit T: Temporal[IO]) =
     Resource.make {
       putStrLn(s"Acquiring Resource $i...") >> IO.sleep(duration) >> putStrLn(s"Acquired Resource $i")
     } { _ => putStrLn(s"Releasing Resource $i...") >> IO.sleep(duration) >> putStrLn(s"Released Resource $i") }
