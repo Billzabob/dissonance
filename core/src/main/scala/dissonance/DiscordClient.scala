@@ -244,6 +244,31 @@ class DiscordClient(token: String, client: Client[IO])(implicit cs: ContextShift
         )
       )
 
+  def getGlobalCommands(): IO[Unit]                      = ???
+  def createGlobalApplicationCommand(): IO[Unit]         = ???
+  def getGlobalApplicationCommand(): IO[Unit]            = ???
+  def editGlobalApplicationCommand(): IO[Unit]           = ???
+  def deleteGlobalApplicationCommand(): IO[Unit]         = ???
+  def getGuildApplicationCommands(): IO[Unit]            = ???
+  def bulkOverwriteGlobalApplicationCommands(): IO[Unit] = ???
+  def createGuildApplicationCommand(): IO[Unit]          = ???
+  def getGuildApplicationCommand(): IO[Unit]             = ???
+  def editGuildApplicationCommand(): IO[Unit]            = ???
+  def deleteGuildApplicationCommand(): IO[Unit]          = ???
+  def bulkOverwriteGuildApplicationCommands(): IO[Unit]  = ???
+
+  // TODO: Not sure about these... Gateway interactions
+  def createInteractionResponse(): IO[Unit]              = ???
+  def editOriginalInteractionResponse(): IO[Unit]        = ???
+  def deleteOriginalInteractionResponse(): IO[Unit]      = ???
+  def createFollowupMessage(): IO[Unit]                  = ???
+  def editFollowupMessage(): IO[Unit]                    = ???
+  def deleteFollowupMessage(): IO[Unit]                  = ???
+  def getGuildApplicationCommandPermissions(): IO[Unit]  = ???
+  def getApplicationCommandPermissions(): IO[Unit]       = ???
+  def editApplicationCommandPermissions(): IO[Unit]      = ???
+  def batchEditApplicationCommandPermissions(): IO[Unit] = ???
+
   // TODO: Add Slack and Github Webhooks
 }
 
