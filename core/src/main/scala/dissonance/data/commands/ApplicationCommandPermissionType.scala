@@ -1,8 +1,7 @@
-package dissonance.data.applicationcommands
+package dissonance.data.commands
 
-import enumeratum.EnumEntry
 import cats.syntax.all._
-import enumeratum._
+import enumeratum.{EnumEntry, _}
 import io.circe.{Decoder, Encoder}
 
 sealed trait ApplicationCommandPermissionType extends EnumEntry

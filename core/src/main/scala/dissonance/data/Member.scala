@@ -1,6 +1,6 @@
 package dissonance.data
 
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import java.time.OffsetDateTime
@@ -18,4 +18,5 @@ case class Member(
 object Member {
   implicit val config: Configuration          = Configuration.default.withSnakeCaseMemberNames
   implicit val memberDecoder: Decoder[Member] = deriveConfiguredDecoder
+  implicit val memberEncoder: Encoder[Member] = deriveConfiguredEncoder
 }

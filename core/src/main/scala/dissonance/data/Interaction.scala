@@ -1,5 +1,9 @@
 package dissonance.data
 
+import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.{Decoder, Encoder}
+
 case class Interaction(
     id: Snowflake,
     applicationId: Snowflake,
@@ -12,3 +16,9 @@ case class Interaction(
     token: String,
     version: Int
 )
+
+object Interaction {
+  implicit val config: Configuration         = Configuration.default.withSnakeCaseMemberNames
+  implicit val decoder: Decoder[Interaction] = deriveConfiguredDecoder
+  implicit val encoder: Encoder[Interaction] = deriveConfiguredEncoder
+}

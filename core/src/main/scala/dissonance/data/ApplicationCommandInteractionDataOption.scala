@@ -1,7 +1,6 @@
 package dissonance.data
 
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto._
+import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder, Json}
 
 case class ApplicationCommandInteractionDataOption(
@@ -11,7 +10,6 @@ case class ApplicationCommandInteractionDataOption(
 )
 
 object ApplicationCommandInteractionDataOption {
-  implicit val config: Configuration                                                                            = Configuration.default.withSnakeCaseMemberNames
-  implicit val applicationCommandInteractionDataOptionDecoder: Decoder[ApplicationCommandInteractionDataOption] = deriveConfiguredDecoder
-  implicit val applicationCommandInteractionDataOptionEncoder: Encoder[ApplicationCommandInteractionDataOption] = deriveConfiguredEncoder
+  implicit val applicationCommandInteractionDataOptionDecoder: Decoder[ApplicationCommandInteractionDataOption] = deriveDecoder
+  implicit val applicationCommandInteractionDataOptionEncoder: Encoder[ApplicationCommandInteractionDataOption] = deriveEncoder
 }

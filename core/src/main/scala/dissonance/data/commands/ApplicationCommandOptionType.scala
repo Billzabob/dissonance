@@ -1,4 +1,4 @@
-package dissonance.data.applicationcommands
+package dissonance.data.commands
 
 import cats.syntax.all._
 import enumeratum._
