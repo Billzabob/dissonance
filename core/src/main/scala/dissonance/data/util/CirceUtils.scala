@@ -9,7 +9,7 @@ object CirceUtils {
       .flatMap(_.toInt)
       .map(_.asLeft[String])
       .orElse(c.value.asString.map(_.asRight[Int]))
-      .fold(DecodingFailure("Value is  not an Either[String, Int", c.history).asLeft[Either[Int, String]])(_.asRight[DecodingFailure])
+      .fold(DecodingFailure("Value is  not an Either[String, Int]", c.history).asLeft[Either[Int, String]])(_.asRight[DecodingFailure])
 
   implicit val encodeEither: Encoder[Either[Int, String]] = (v: Either[Int, String]) => v.fold(Json.fromInt, Json.fromString)
 }

@@ -4,6 +4,8 @@ import cats.syntax.all._
 import enumeratum.{Enum, EnumEntry}
 import io.circe.{Decoder, Encoder}
 
+import scala.collection.immutable.IndexedSeq
+
 sealed trait InteractionType extends EnumEntry with Product with Serializable
 
 object InteractionType extends Enum[InteractionType] {
