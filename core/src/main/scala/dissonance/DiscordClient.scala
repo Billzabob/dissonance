@@ -233,18 +233,21 @@ class DiscordClient(token: String, client: Client[IO])(implicit cs: ContextShift
         )
       )
 
+  def executeWebhookWithResponse(webhook: Webhook, webhookMessage: WebhookMessage): IO[Message] =
+    client.expect[Message](createExecuteWebhookRequest(webhook, webhookMessage, wait = true))
+
+  def executeWebhook(webhook: Webhook, webhookMessage: WebhookMessage): IO[Status] =
+    client.status(createExecuteWebhookRequest(webhook, webhookMessage, wait = false))
+
   // TODO: Handle uploading files which requires multipart/form-data
-  def executeWebhook(webhook: Webhook, wait: Option[Boolean], webhookMessage: WebhookMessage): IO[Status] =
-    client
-      .status(
-        POST(
-          webhookMessage.asJson,
-          apiEndpoint
-            .addPath(s"webhooks/${webhook.id}/${webhook.token.get}")
-            .withQueryParam("wait", wait.getOrElse(false)),
-          headers(token)
-        )
-      )
+  private def createExecuteWebhookRequest(webhook: Webhook, webhookMessage: WebhookMessage, wait: Boolean): IO[Request[IO]] =
+    POST(
+      webhookMessage.asJson,
+      apiEndpoint
+        .addPath(s"webhooks/${webhook.id}/${webhook.token.get}")
+        .withQueryParam("wait", wait),
+      headers(token)
+    )
 
   def getGlobalCommands(applicationId: Snowflake): IO[List[ApplicationCommand]] =
     client
