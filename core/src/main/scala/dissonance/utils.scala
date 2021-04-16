@@ -1,20 +1,22 @@
 package dissonance
 
-import cats.effect._
-import cats.syntax.all._
 import java.net.http.HttpClient
+
+import cats.effect._
+import cats.syntax.flatMap._
+
 import scala.concurrent.duration._
 
 object utils {
-  def putStrLn(s: String): IO[Unit] = IO(println(s))
+  def putStrLn[F[_]: Sync](s: String): F[Unit] = Sync[F].delay(println(s))
 
-  def fakeResource(i: Int, duration: FiniteDuration)(implicit T: Timer[IO]) =
+  def fakeResource[F[_]: Sync: Timer](i: Int, duration: FiniteDuration) =
     Resource.make {
-      putStrLn(s"Acquiring Resource $i...") >> IO.sleep(duration) >> putStrLn(s"Acquired Resource $i")
-    } { _ => putStrLn(s"Releasing Resource $i...") >> IO.sleep(duration) >> putStrLn(s"Released Resource $i") }
+      putStrLn(s"Acquiring Resource $i...") >> Timer[F].sleep(duration) >> putStrLn(s"Acquired Resource $i")
+    } { _ => putStrLn(s"Releasing Resource $i...") >> Timer[F].sleep(duration) >> putStrLn(s"Released Resource $i") }
 
-  def javaClient: IO[HttpClient] =
-    IO {
+  def javaClient[F[_]: Sync]: F[HttpClient] =
+    Sync[F].delay {
       val builder = HttpClient.newBuilder()
       // workaround for https://github.com/http4s/http4s-jdk-http-client/issues/200
       if (Runtime.version().feature() == 11) {
