@@ -18,9 +18,9 @@ import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.client.Client
 import org.http4s.client.jdkhttpclient.JdkHttpClient
 import org.http4s.multipart.{Multipart, Part}
-import org.http4s.{Request, Status, Uri}
+import org.http4s.{Headers, Request, Status, Uri}
 
-class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: ContextShift[F]) {
+class DiscordClient[F[_]: Async](token: String, client: Client[F]) {
 
   def sendMessage(message: String, channelId: Snowflake, tts: Boolean = false): F[Message] =
     client
@@ -71,10 +71,10 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
       )
       .handleErrorWith(_ => Applicative[F].unit) // Throws: java.io.IOException: unexpected content length header with 204 response
 
-  def sendEmbedWithFileImage(embed: Embed, file: File, channelId: Snowflake, blocker: Blocker): F[Message] = {
+  def sendEmbedWithFileImage(embed: Embed, file: File, channelId: Snowflake): F[Message] = {
     val multipart = Multipart[F](
       Vector(
-        Part.fileData[F]("file", file, blocker),
+        Part.fileData[F]("file", file),
         Part.formData("payload_json", Json.obj("embed" -> embed.withImage(Image(Some(Uri.unsafeFromString(s"attachment://${file.getName}")), None, None, None)).asJson).noSpaces)
       )
     )
@@ -84,19 +84,19 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
           .withMethod(POST)
           .withUri(apiEndpoint.addPath(s"channels/$channelId/messages"))
           .withEntity(multipart)
-          .withHeaders(headers(token) :: multipart.headers.toList: _*)
+          .withHeaders(multipart.headers ++ Headers(headers(token)))
       )
   }
 
-  def sendFile(file: File, channelId: Snowflake, blocker: Blocker): F[Message] = {
-    val multipart = Multipart[F](Vector(Part.fileData[F]("file", file, blocker)))
+  def sendFile(file: File, channelId: Snowflake): F[Message] = {
+    val multipart = Multipart[F](Vector(Part.fileData[F]("file", file)))
     client
       .expect[Message](
         Request[F]()
           .withMethod(POST)
           .withUri(apiEndpoint.addPath(s"channels/$channelId/messages"))
           .withEntity(multipart)
-          .withHeaders(headers(token) :: multipart.headers.toList: _*)
+          .withHeaders(multipart.headers ++ Headers(headers(token)))
       )
   }
 
@@ -269,8 +269,11 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
 }
 
 object DiscordClient {
-  def make[F[_]: ConcurrentEffect](token: String)(implicit cs: ContextShift[F]): Resource[F, DiscordClient[F]] =
-    Resource.eval(utils.javaClient.map(javaClient => new DiscordClient(token, JdkHttpClient[F](javaClient))))
+  def make[F[_]: Async](token: String): Resource[F, DiscordClient[F]] =
+    for {
+      javaHttpClient <- Resource.eval(utils.javaClient)
+      javaClient     <- JdkHttpClient[F](javaHttpClient)
+    } yield new DiscordClient(token, javaClient)
 
   type AllowedMentions = Unit // TODO: Implement this
 

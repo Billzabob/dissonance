@@ -3,8 +3,8 @@ package dissonance
 import java.io.IOException
 
 import cats.Applicative
-import cats.effect._
-import cats.effect.concurrent._
+import cats.effect.std.Queue
+import cats.effect.{Deferred, Ref, Temporal, _}
 import cats.syntax.all._
 import dissonance.Discord._
 import dissonance.data.ControlMessage._
@@ -12,7 +12,6 @@ import dissonance.data._
 import dissonance.data.events.Ready
 import dissonance.utils._
 import fs2.Stream
-import fs2.concurrent.Queue
 import io.circe.Json
 import io.circe.parser._
 import io.circe.syntax._
@@ -24,10 +23,11 @@ import org.http4s.client.jdkhttpclient._
 import org.http4s.headers._
 import org.http4s.implicits._
 import org.http4s.{headers => _, _}
+import org.typelevel.ci.CIString
 
 import scala.concurrent.duration._
 
-class Discord[F[_]: Concurrent](token: String, val httpClient: Client[F], wsClient: WSClient[F])(implicit cs: ContextShift[F], t: Timer[F]) {
+class Discord[F[_]: Async](token: String, val httpClient: Client[F], wsClient: WSClient[F])(implicit t: Temporal[F]) {
   type SequenceNumber    = Ref[F, Option[Int]]
   type SessionId         = Ref[F, Option[String]]
   type Acks              = Queue[F, Unit]
@@ -103,7 +103,7 @@ class Discord[F[_]: Concurrent](token: String, val httpClient: Client[F], wsClie
       case Hello(intervalDuration) =>
         interval.complete(intervalDuration) >> identifyOrResume(state.sessionId, state.sequenceNumber, shard, intents).flatMap(connection.send).as(Result(None))
       case HeartBeatAck =>
-        state.acks.enqueue1(()).as(Result(None))
+        state.acks.offer(()).as(Result(None))
       case Heartbeat(d) =>
         putStrLn(s"Heartbeat received: $d").as(Result(None))
       case Reconnect =>
@@ -121,7 +121,7 @@ class Discord[F[_]: Concurrent](token: String, val httpClient: Client[F], wsClie
     }
 
   private def connection(uri: Uri): Stream[F, WSConnectionHighLevel[F]] =
-    Stream.resource(wsClient.connectHighLevel(WSRequest(uri, Headers.of(headers(token)))))
+    Stream.resource(wsClient.connectHighLevel(WSRequest(uri, Headers(headers(token)))))
 
   private def heartbeatInterval: Stream[F, HeartbeatInterval] =
     Stream.eval(Deferred[F, FiniteDuration])
@@ -138,7 +138,7 @@ class Discord[F[_]: Concurrent](token: String, val httpClient: Client[F], wsClie
       val heartbeats    = Stream.eval(sendHeartbeat) ++ Stream.repeatEval(sendHeartbeat).metered(interval)
 
       // TODO: Something besides true, false
-      (heartbeats.as(true) merge acks.dequeue.as(false)).zipWithPrevious.flatMap {
+      (heartbeats.as(true) merge Stream.emit(acks.take.as(false))).zipWithPrevious.flatMap {
         case (Some(true), true) => Stream.raiseError[F](Errors.NoHeartbeatAck)
         case _                  => Stream.emit(())
       }
@@ -162,11 +162,15 @@ class Discord[F[_]: Concurrent](token: String, val httpClient: Client[F], wsClie
 }
 
 object Discord {
-  def make[F[_]: ConcurrentEffect](token: String)(implicit cs: ContextShift[F], t: Timer[F]): Resource[F, Discord[F]] =
-    Resource.eval(utils.javaClient.map(javaClient => new Discord(token, JdkHttpClient[F](javaClient), JdkWSClient[F](javaClient))))
+  def make[F[_]: Async](token: String): Resource[F, Discord[F]] =
+    for {
+      javaClient     <- Resource.eval(utils.javaClient)
+      javaHttpClient <- JdkHttpClient[F](javaClient)
+      javaWsClient   <- JdkWSClient[F](javaClient)
+    } yield new Discord(token, javaHttpClient, javaWsClient)
 
   val apiEndpoint                           = uri"https://discordapp.com/api/v8"
-  def headers(token: String): Authorization = Authorization(Credentials.Token("Bot".ci, token))
+  def headers(token: String): Authorization = Authorization(Credentials.Token(CIString("Bot"), token))
 
   sealed trait EventResult                extends Product with Serializable { val terminate: Boolean }
   case class Result(event: Option[Event]) extends EventResult               { val terminate = false  }
