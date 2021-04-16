@@ -3,3 +3,4 @@ metals.sbt
 .metals/
 .bloop
 .idea/
+%LOCALAPPDATA%/
