@@ -3,15 +3,12 @@ package dissonance
 import java.io.File
 
 import cats.Applicative
-import java.io.File
-
 import cats.effect._
 import cats.syntax.all._
 import dissonance.Discord._
 import dissonance.DiscordClient.WebhookMessage
 import dissonance.data._
 import dissonance.data.commands.{ApplicationCommand, ApplicationCommandOption, ApplicationCommandPermission, GuildApplicationCommandPermissions}
-import dissonance.data._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax._
@@ -22,7 +19,6 @@ import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.client.Client
 import org.http4s.client.jdkhttpclient.JdkHttpClient
 import org.http4s.multipart.{Multipart, Part}
-import org.http4s.{Headers, Request, Status, Uri}
 import org.http4s.{Request, Status, Uri}
 
 class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: ContextShift[F]) {
@@ -270,14 +266,16 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
       .withEntity(webhookMessage)
       .withHeaders(headers(token))
 
-  def getGlobalCommands(applicationId: Snowflake): IO[List[ApplicationCommand]] =
+  def getGlobalCommands(applicationId: Snowflake): F[List[ApplicationCommand]] =
     client
       .expect[List[ApplicationCommand]](
-        GET(
-          apiEndpoint
-            .addPath(s"applications/$applicationId/commands"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(GET)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/commands")
+          )
+          .withHeaders(headers(token))
       )
 
   // TODO: Make a case class for the request params
@@ -286,206 +284,243 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
       description: String,
       options: List[ApplicationCommandOption] = List.empty,
       defaultPermission: Boolean = true
-  ): IO[ApplicationCommand] =
+  ): F[ApplicationCommand] =
     client
       .expect[ApplicationCommand](
-        POST(
-          // TODO Case class here
-          Json.obj(
-            "name"               -> name.asJson,
-            "description"        -> description.asJson,
-            "options"            -> options.asJson,
-            "default_permission" -> defaultPermission.asJson
-          ),
-          apiEndpoint
-            .addPath(s"applications/$applicationId/commands"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(POST)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/commands")
+          )
+          .withHeaders(headers(token))
+          .withEntity(
+            // TODO Case class here
+            Json.obj(
+              "name"               -> name.asJson,
+              "description"        -> description.asJson,
+              "options"            -> options.asJson,
+              "default_permission" -> defaultPermission.asJson
+            )
+          )
       )
 
-  def getGlobalApplicationCommand(applicationId: Snowflake, commandId: Snowflake): IO[ApplicationCommand] =
+  def getGlobalApplicationCommand(applicationId: Snowflake, commandId: Snowflake): F[ApplicationCommand] =
     client
       .expect[ApplicationCommand](
-        GET(
-          apiEndpoint
-            .addPath(s"applications/$applicationId/commands/$commandId"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(GET)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/commands/$commandId")
+          )
+          .withHeaders(headers(token))
       )
 
   def editGlobalApplicationCommand(
       applicationId: Snowflake,
       commandId: Snowflake
-  )(name: Option[String], description: Option[String], options: Option[List[ApplicationCommandOption]], defaultPermission: Option[Boolean]): IO[ApplicationCommand] =
+  )(name: Option[String], description: Option[String], options: Option[List[ApplicationCommandOption]], defaultPermission: Option[Boolean]): F[ApplicationCommand] =
     client
       .expect[ApplicationCommand](
-        PATCH(
-          // TODO Case class here
-          Json.obj(
-            "name"               -> name.asJson,
-            "description"        -> description.asJson,
-            "options"            -> options.asJson,
-            "default_permission" -> defaultPermission.asJson
-          ),
-          apiEndpoint
-            .addPath(s"applications/$applicationId/commands/$commandId"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(PATCH)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/commands/$commandId")
+          )
+          .withHeaders(headers(token))
+          .withEntity( // TODO Case class here
+            Json.obj(
+              "name"               -> name.asJson,
+              "description"        -> description.asJson,
+              "options"            -> options.asJson,
+              "default_permission" -> defaultPermission.asJson
+            )
+          )
       )
 
-  def deleteGlobalApplicationCommand(applicationId: Snowflake, commandId: Snowflake): IO[Status] =
+  def deleteGlobalApplicationCommand(applicationId: Snowflake, commandId: Snowflake): F[Status] =
     client
       .status(
-        DELETE(
-          apiEndpoint
-            .addPath(s"applications/$applicationId/commands/$commandId"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(DELETE)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/commands/$commandId")
+          )
+          .withHeaders(headers(token))
       )
 
-  def getGuildApplicationCommands(applicationId: Snowflake, guildId: Snowflake): IO[List[ApplicationCommand]] =
+  def getGuildApplicationCommands(applicationId: Snowflake, guildId: Snowflake): F[List[ApplicationCommand]] =
     client
       .expect[List[ApplicationCommand]](
-        GET(
-          apiEndpoint
-            .addPath(s"applications/$applicationId/guilds/$guildId/commands"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(GET)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/guilds/$guildId/commands")
+          )
+          .withHeaders(headers(token))
       )
 
-  def bulkOverwriteGlobalApplicationCommands(applicationId: Snowflake)(applicationCommands: List[ApplicationCommand]): IO[List[ApplicationCommand]] =
+  def bulkOverwriteGlobalApplicationCommands(applicationId: Snowflake)(applicationCommands: List[ApplicationCommand]): F[List[ApplicationCommand]] =
     client
       .expect[List[ApplicationCommand]](
-        PUT(
-          applicationCommands.asJson,
-          apiEndpoint
-            .addPath(s"applications/$applicationId/commands"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(PUT)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/commands")
+          )
+          .withHeaders(headers(token))
+          .withEntity(applicationCommands)
       )
 
   def createGuildApplicationCommand(
       applicationId: Snowflake,
       guildId: Snowflake
-  )(name: String, description: String, options: List[ApplicationCommandOption] = List.empty, defaultPermission: Boolean = true): IO[ApplicationCommand] =
+  )(name: String, description: String, options: List[ApplicationCommandOption] = List.empty, defaultPermission: Boolean = true): F[ApplicationCommand] =
     client
       .expect[ApplicationCommand](
-        POST(
-          // TODO Case class here
-          Json.obj(
-            "name"               -> name.asJson,
-            "description"        -> description.asJson,
-            "options"            -> options.asJson,
-            "default_permission" -> defaultPermission.asJson
-          ),
-          apiEndpoint
-            .addPath(s"applications/$applicationId/guilds/$guildId/commands"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(POST)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/guilds/$guildId/commands")
+          )
+          .withHeaders(headers(token))
+          .withEntity(
+            // TODO Case class here
+            Json.obj(
+              "name"               -> name.asJson,
+              "description"        -> description.asJson,
+              "options"            -> options.asJson,
+              "default_permission" -> defaultPermission.asJson
+            )
+          )
       )
 
-  def getGuildApplicationCommand(applicationId: Snowflake, guildId: Snowflake, commandId: Snowflake): IO[ApplicationCommand] =
+  def getGuildApplicationCommand(applicationId: Snowflake, guildId: Snowflake, commandId: Snowflake): F[ApplicationCommand] =
     client
       .expect[ApplicationCommand](
-        GET(
-          apiEndpoint
-            .addPath(s"applications/$applicationId/guilds/$guildId/commands/$commandId"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(GET)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/guilds/$guildId/commands/$commandId")
+          )
+          .withHeaders(headers(token))
       )
 
   def editGuildApplicationCommand(
       applicationId: Snowflake,
       guildId: Snowflake,
       commandId: Snowflake
-  )(name: Option[String], description: Option[String], options: Option[List[ApplicationCommandOption]], defaultPermission: Option[Boolean]): IO[ApplicationCommand] =
+  )(name: Option[String], description: Option[String], options: Option[List[ApplicationCommandOption]], defaultPermission: Option[Boolean]): F[ApplicationCommand] =
     client
       .expect[ApplicationCommand](
-        PATCH(
-          // TODO Case class here
-          Json.obj(
-            "name"               -> name.asJson,
-            "description"        -> description.asJson,
-            "options"            -> options.asJson,
-            "default_permission" -> defaultPermission.asJson
-          ),
-          apiEndpoint
-            .addPath(s"applications/$applicationId/guilds/$guildId/commands/$commandId"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(PATCH)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/guilds/$guildId/commands/$commandId")
+          )
+          .withHeaders(headers(token))
+          .withEntity(
+            // TODO Case class here
+            Json.obj(
+              "name"               -> name.asJson,
+              "description"        -> description.asJson,
+              "options"            -> options.asJson,
+              "default_permission" -> defaultPermission.asJson
+            )
+          )
       )
 
-  def deleteGuildApplicationCommand(applicationId: Snowflake, guildId: Snowflake, commandId: Snowflake): IO[Status] =
+  def deleteGuildApplicationCommand(applicationId: Snowflake, guildId: Snowflake, commandId: Snowflake): F[Status] =
     client
       .status(
-        DELETE(
-          apiEndpoint
-            .addPath(s"applications/$applicationId/guilds/$guildId/commands/$commandId"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(DELETE)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/guilds/$guildId/commands/$commandId")
+          )
+          .withHeaders(headers(token))
       )
 
-  def bulkOverwriteGuildApplicationCommands(applicationId: Snowflake, guildId: Snowflake)(applicationCommands: List[ApplicationCommand]): IO[List[ApplicationCommand]] =
+  def bulkOverwriteGuildApplicationCommands(applicationId: Snowflake, guildId: Snowflake)(applicationCommands: List[ApplicationCommand]): F[List[ApplicationCommand]] =
     client
       .expect[List[ApplicationCommand]](
-        PUT(
-          applicationCommands.asJson,
-          apiEndpoint
-            .addPath(s"applications/$applicationId/guilds/$guildId/commands"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(PUT)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/guilds/$guildId/commands")
+          )
+          .withHeaders(headers(token))
+          .withEntity(applicationCommands)
       )
 
   // TODO: Not sure about these... Gateway interactions
-  def createInteractionResponse(): IO[Unit]         = ???
-  def editOriginalInteractionResponse(): IO[Unit]   = ???
-  def deleteOriginalInteractionResponse(): IO[Unit] = ???
-  def createFollowupMessage(): IO[Unit]             = ???
-  def editFollowupMessage(): IO[Unit]               = ???
-  def deleteFollowupMessage(): IO[Unit]             = ???
+  def createInteractionResponse(): F[Unit]         = ???
+  def editOriginalInteractionResponse(): F[Unit]   = ???
+  def deleteOriginalInteractionResponse(): F[Unit] = ???
+  def createFollowupMessage(): F[Unit]             = ???
+  def editFollowupMessage(): F[Unit]               = ???
+  def deleteFollowupMessage(): F[Unit]             = ???
   // -------------------------------------------------
 
-  def getGuildApplicationCommandPermissions(applicationId: Snowflake, guildId: Snowflake): IO[List[GuildApplicationCommandPermissions]] =
+  def getGuildApplicationCommandPermissions(applicationId: Snowflake, guildId: Snowflake): F[List[GuildApplicationCommandPermissions]] =
     client
       .expect[List[GuildApplicationCommandPermissions]](
-        GET(
-          apiEndpoint
-            .addPath(s"applications/$applicationId/guilds/$guildId/commands/permissions"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(GET)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/guilds/$guildId/commands/permissions")
+          )
+          .withHeaders(headers(token))
       )
 
-  def getApplicationCommandPermissions(applicationId: Snowflake, guildId: Snowflake, commandId: Snowflake): IO[GuildApplicationCommandPermissions] =
+  def getApplicationCommandPermissions(applicationId: Snowflake, guildId: Snowflake, commandId: Snowflake): F[GuildApplicationCommandPermissions] =
     client
       .expect[GuildApplicationCommandPermissions](
-        GET(
-          apiEndpoint
-            .addPath(s"applications/$applicationId/guilds/$guildId/commands/$commandId/permissions"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(GET)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/guilds/$guildId/commands/$commandId/permissions")
+          )
+          .withHeaders(headers(token))
       )
 
-  def editApplicationCommandPermissions(applicationId: Snowflake, guildId: Snowflake, commandId: Snowflake)(permissions: List[ApplicationCommandPermission]): IO[Status] =
+  def editApplicationCommandPermissions(applicationId: Snowflake, guildId: Snowflake, commandId: Snowflake)(permissions: List[ApplicationCommandPermission]): F[Status] =
     client
       .status(
-        PUT(
-          permissions.asJson,
-          apiEndpoint
-            .addPath(s"applications/$applicationId/guilds/$guildId/commands/$commandId/permissions"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(PUT)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/guilds/$guildId/commands/$commandId/permissions")
+          )
+          .withHeaders(headers(token))
+          .withEntity(permissions)
       )
 
   // TODO: It says it takes a "partial" GuildApplicationCommandPermissions object
-  def batchEditApplicationCommandPermissions(applicationId: Snowflake, guildId: Snowflake)(permissions: List[GuildApplicationCommandPermissions]): IO[Status] =
+  def batchEditApplicationCommandPermissions(applicationId: Snowflake, guildId: Snowflake)(permissions: List[GuildApplicationCommandPermissions]): F[Status] =
     client
       .status(
-        PUT(
-          permissions.asJson,
-          apiEndpoint
-            .addPath(s"applications/$applicationId/guilds/$guildId/commands/permissions"),
-          headers(token)
-        )
+        Request[F]()
+          .withMethod(PUT)
+          .withUri(
+            apiEndpoint
+              .addPath(s"applications/$applicationId/guilds/$guildId/commands/permissions")
+          )
+          .withHeaders(headers(token))
+          .withEntity(permissions)
       )
 
   // TODO: Add Slack and Github Webhooks
