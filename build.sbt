@@ -11,9 +11,10 @@ lazy val core = project
   .settings(
     name := "dissonance",
     // TODO: Remove below here when we remove Main.scala
-    fork := true,                        // Fork to separate process
-    connectInput := true,                // Connects stdin to sbt during forked runs
-    outputStrategy := Some(StdoutOutput) // Get rid of output prefix
+    fork := true,                         // Fork to separate process
+    connectInput := true,                 // Connects stdin to sbt during forked runs
+    outputStrategy := Some(StdoutOutput), // Get rid of output prefix
+    testFrameworks += new TestFramework("weaver.framework.CatsEffect")
   )
 
 lazy val docs = project
