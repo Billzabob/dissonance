@@ -71,7 +71,7 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
       )
       .handleErrorWith(_ => Applicative[F].unit) // Throws: java.io.IOException: unexpected content length header with 204 response
 
-  def sendEmbedWithFileImage(embed: Embed, file: File, channelId: Snowflake, blocker: Blocker): F[Message] = {
+  def sendEmbedWithFileImage(embed: Embed, file: File, channelId: Snowflake): F[Message] = {
     val multipart = Multipart[F](
       Vector(
         Part.fileData[F]("file", file, blocker),
@@ -88,7 +88,7 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
       )
   }
 
-  def sendFile(file: File, channelId: Snowflake, blocker: Blocker): F[Message] = {
+  def sendFile(file: File, channelId: Snowflake): F[Message] = {
     val multipart = Multipart[F](Vector(Part.fileData[F]("file", file, blocker)))
     client
       .expect[Message](
@@ -269,7 +269,7 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
 }
 
 object DiscordClient {
-  def make[F[_]: ConcurrentEffect](token: String)(implicit cs: ContextShift[F]): Resource[F, DiscordClient[F]] =
+  def make[F[_]: ConcurrentEffect](token: String): Resource[F, DiscordClient[F]] =
     Resource.eval(utils.javaClient.map(javaClient => new DiscordClient(token, JdkHttpClient[F](javaClient))))
 
   type AllowedMentions = Unit // TODO: Implement this

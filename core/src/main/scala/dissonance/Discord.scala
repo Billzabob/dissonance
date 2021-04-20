@@ -26,8 +26,9 @@ import org.http4s.implicits._
 import org.http4s.{headers => _, _}
 
 import scala.concurrent.duration._
+import cats.effect.{ Deferred, Ref, Temporal }
 
-class Discord[F[_]: Concurrent](token: String, val httpClient: Client[F], wsClient: WSClient[F])(implicit cs: ContextShift[F], t: Timer[F]) {
+class Discord[F[_]: Concurrent](token: String, val httpClient: Client[F], wsClient: WSClient[F])(implicit cs: ContextShift[F], t: Temporal[F]) {
   type SequenceNumber    = Ref[F, Option[Int]]
   type SessionId         = Ref[F, Option[String]]
   type Acks              = Queue[F, Unit]
@@ -162,7 +163,7 @@ class Discord[F[_]: Concurrent](token: String, val httpClient: Client[F], wsClie
 }
 
 object Discord {
-  def make[F[_]: ConcurrentEffect](token: String)(implicit cs: ContextShift[F], t: Timer[F]): Resource[F, Discord[F]] =
+  def make[F[_]: ConcurrentEffect](token: String)(implicit t: Temporal[F]): Resource[F, Discord[F]] =
     Resource.eval(utils.javaClient.map(javaClient => new Discord(token, JdkHttpClient[F](javaClient), JdkWSClient[F](javaClient))))
 
   val apiEndpoint                           = uri"https://discordapp.com/api/v8"
