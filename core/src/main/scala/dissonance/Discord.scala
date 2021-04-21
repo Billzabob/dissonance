@@ -4,7 +4,7 @@ import java.io.IOException
 
 import cats.Applicative
 import cats.effect.std.Queue
-import cats.effect.{Deferred, Ref, Temporal, _}
+import cats.effect._
 import cats.syntax.all._
 import dissonance.Discord._
 import dissonance.data.ControlMessage._
