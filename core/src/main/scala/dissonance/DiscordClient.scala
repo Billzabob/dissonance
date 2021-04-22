@@ -21,11 +21,11 @@ import org.http4s.client.jdkhttpclient.JdkHttpClient
 import org.http4s.multipart.{Multipart, Part}
 import org.http4s.{Request, Status, Uri}
 
-class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: ContextShift[F]) {
+class DiscordClient[F[_]: Async](token: String, client: Client[F]) {
 
   def sendMessage(message: String, channelId: Snowflake, tts: Boolean = false): F[Message] =
     client
-      .expect[Message](
+      .fetchAs[Message](
         Request[F]()
           .withMethod(POST)
           .withUri(apiEndpoint.addPath(s"channels/$channelId/messages"))
@@ -36,7 +36,7 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
               "tts"     -> tts.asJson
             )
           )
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
 
   def deleteMessage(channelId: Snowflake, messageId: Snowflake): F[Unit] =
@@ -45,13 +45,13 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
         Request[F]()
           .withMethod(DELETE)
           .withUri(apiEndpoint.addPath(s"channels/$channelId/messages/$messageId"))
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
       .handleErrorWith(_ => Applicative[F].unit) // Throws: java.io.IOException: unexpected content length header with 204 response
 
   def sendEmbed(embed: Embed, channelId: Snowflake): F[Message] =
     client
-      .expect[Message](
+      .fetchAs[Message](
         Request[F]()
           .withMethod(POST)
           .withUri(apiEndpoint.addPath(s"channels/$channelId/messages"))
@@ -59,7 +59,7 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
             // TODO Case class here
             Json.obj("embed" -> embed.asJson)
           )
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
 
   def sendInteractionResponse(interactionResponse: InteractionResponse, interactionId: Snowflake, interactionToken: String): F[Unit] =
@@ -72,32 +72,32 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
       )
       .handleErrorWith(_ => Applicative[F].unit) // Throws: java.io.IOException: unexpected content length header with 204 response
 
-  def sendEmbedWithFileImage(embed: Embed, file: File, channelId: Snowflake, blocker: Blocker): F[Message] = {
+  def sendEmbedWithFileImage(embed: Embed, file: File, channelId: Snowflake): F[Message] = {
     val multipart = Multipart[F](
       Vector(
-        Part.fileData[F]("file", file, blocker),
+        Part.fileData[F]("file", file),
         Part.formData("payload_json", Json.obj("embed" -> embed.withImage(Image(Some(Uri.unsafeFromString(s"attachment://${file.getName}")), None, None, None)).asJson).noSpaces)
       )
     )
     client
-      .expect[Message](
+      .fetchAs[Message](
         Request[F]()
           .withMethod(POST)
           .withUri(apiEndpoint.addPath(s"channels/$channelId/messages"))
           .withEntity(multipart)
-          .withHeaders(headers(token) :: multipart.headers.toList: _*)
+          .putHeaders(multipart.headers.headers, headers(token))
       )
   }
 
-  def sendFile(file: File, channelId: Snowflake, blocker: Blocker): F[Message] = {
-    val multipart = Multipart[F](Vector(Part.fileData[F]("file", file, blocker)))
+  def sendFile(file: File, channelId: Snowflake): F[Message] = {
+    val multipart = Multipart[F](Vector(Part.fileData[F]("file", file)))
     client
-      .expect[Message](
+      .fetchAs[Message](
         Request[F]()
           .withMethod(POST)
           .withUri(apiEndpoint.addPath(s"channels/$channelId/messages"))
           .withEntity(multipart)
-          .withHeaders(headers(token) :: multipart.headers.toList: _*)
+          .putHeaders(multipart.headers.headers, headers(token))
       )
   }
 
@@ -107,14 +107,14 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
         Request[F]()
           .withMethod(PUT)
           .withUri(apiEndpoint.addPath(s"channels/$channelId/messages/$messageId/reactions/$emoji/@me"))
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
       .handleErrorWith(_ => Applicative[F].unit) // Throws: java.io.IOException: unexpected content length header with 204 response
 
   def addEmoji(guildId: Snowflake, name: String, emojiData: Array[Byte], roles: List[Snowflake] = Nil): F[Emoji] = {
     val imageData = "data:;base64," + fs2.Stream.emits(emojiData).through(fs2.text.base64.encode).compile.foldMonoid
     client
-      .expect[Emoji](
+      .fetchAs[Emoji](
         Request[F]()
           .withMethod(POST)
           .withUri(apiEndpoint.addPath(s"guilds/$guildId/emojis"))
@@ -126,31 +126,31 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
               "roles" -> roles.asJson
             )
           )
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
   }
 
   def listEmojis(guildId: Snowflake): F[List[Emoji]] =
     client
-      .expect[List[Emoji]](
+      .fetchAs[List[Emoji]](
         Request[F]()
           .withMethod(GET)
           .withUri(apiEndpoint.addPath(s"guilds/$guildId/emojis"))
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
 
   def getChannelMessage(channelId: Snowflake, messageId: Snowflake): F[Message] =
     client
-      .expect[Message](
+      .fetchAs[Message](
         Request[F]()
           .withMethod(GET)
           .withUri(apiEndpoint.addPath(s"channels/$channelId/messages/$messageId"))
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
 
   def createWebhook(name: String, avatar: Option[ImageDataUri], channelId: Snowflake): F[Webhook] =
     client
-      .expect[Webhook](
+      .fetchAs[Webhook](
         Request[F]()
           .withMethod(POST)
           .withUri(apiEndpoint.addPath(s"channels/$channelId/webhooks"))
@@ -160,39 +160,39 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
               "avatar" -> avatar.asJson
             )
           )
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
 
   def getChannelWebhooks(channelId: Snowflake): F[List[Webhook]] =
     client
-      .expect[List[Webhook]](
+      .fetchAs[List[Webhook]](
         Request[F]()
           .withMethod(GET)
           .withUri(apiEndpoint.addPath(s"channels/$channelId/webhooks"))
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
 
   def getGuildWebhooks(guildId: Snowflake): F[List[Webhook]] =
     client
-      .expect[List[Webhook]](
+      .fetchAs[List[Webhook]](
         Request[F]()
           .withMethod(GET)
           .withUri(apiEndpoint.addPath(s"guilds/$guildId/webhooks"))
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
 
   def getWebhook(webhookId: Snowflake): F[Webhook] =
     client
-      .expect[Webhook](
+      .fetchAs[Webhook](
         Request[F]()
           .withMethod(GET)
           .withUri(apiEndpoint.addPath(s"webhooks/$webhookId"))
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
 
   def getWebhookWithToken(webhookId: Snowflake, token: String): F[Webhook] =
     client
-      .expect[Webhook](
+      .fetchAs[Webhook](
         Request[F]()
           .withMethod(GET)
           .withUri(apiEndpoint.addPath(s"webhooks/$webhookId/$token"))
@@ -200,7 +200,7 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
 
   def modifyWebhook(webhookId: Snowflake, name: Option[String], avatar: Option[ImageDataUri], channelId: Option[Snowflake]): F[Webhook] =
     client
-      .expect[Webhook](
+      .fetchAs[Webhook](
         Request[F]()
           .withMethod(PATCH)
           .withUri(apiEndpoint.addPath(s"webhooks/$webhookId"))
@@ -212,12 +212,12 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
               "channel_id" -> channelId.asJson
             )
           )
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
 
   def modifyWebhookWithToken(webhookId: Snowflake, name: Option[String], avatar: Option[ImageDataUri], channelId: Option[Snowflake], token: String): F[Webhook] =
     client
-      .expect[Webhook](
+      .fetchAs[Webhook](
         Request[F]()
           .withMethod(PATCH)
           .withUri(apiEndpoint.addPath(s"webhooks/$webhookId/$token"))
@@ -237,7 +237,7 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
         Request[F]()
           .withMethod(DELETE)
           .withUri(apiEndpoint.addPath(s"webhooks/$webhookId"))
-          .withHeaders(headers(token))
+          .putHeaders(headers(token))
       )
 
   def deleteWebhookWithToken(webhookId: Snowflake, token: String): F[Status] =
@@ -249,10 +249,16 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
       )
 
   def executeWebhookWithResponse(webhook: Webhook, webhookMessage: WebhookMessage): F[Message] =
-    client.expect[Message](createExecuteWebhookRequest(webhook, webhookMessage, wait = true))
+    client
+      .fetchAs[Message](
+        createExecuteWebhookRequest(webhook, webhookMessage, wait = true)
+      )
 
   def executeWebhook(webhook: Webhook, webhookMessage: WebhookMessage): F[Status] =
-    client.status(createExecuteWebhookRequest(webhook, webhookMessage, wait = false))
+    client
+      .status(
+        createExecuteWebhookRequest(webhook, webhookMessage, wait = false)
+      )
 
   // TODO: Handle uploading files which requires multipart/form-data
   private def createExecuteWebhookRequest(webhook: Webhook, webhookMessage: WebhookMessage, wait: Boolean): Request[F] =
@@ -264,7 +270,7 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
           .withQueryParam("wait", wait)
       )
       .withEntity(webhookMessage)
-      .withHeaders(headers(token))
+      .putHeaders(headers(token))
 
   def getGlobalCommands(applicationId: Snowflake): F[List[ApplicationCommand]] =
     client
@@ -527,8 +533,11 @@ class DiscordClient[F[_]: Sync](token: String, client: Client[F])(implicit cs: C
 }
 
 object DiscordClient {
-  def make[F[_]: ConcurrentEffect](token: String)(implicit cs: ContextShift[F]): Resource[F, DiscordClient[F]] =
-    Resource.eval(utils.javaClient.map(javaClient => new DiscordClient(token, JdkHttpClient[F](javaClient))))
+  def make[F[_]: Async](token: String): Resource[F, DiscordClient[F]] =
+    for {
+      javaHttpClient <- Resource.eval(utils.javaClient)
+      javaClient     <- JdkHttpClient[F](javaHttpClient)
+    } yield new DiscordClient(token, javaClient)
 
   type AllowedMentions = Unit // TODO: Implement this
 

@@ -26,4 +26,6 @@ jobs:
       if: matrix.scala == '2.13.5'
       run: sbt ++${{ matrix.scala }} scalafmtCheckAll
     - name: Run tests
+      env:
+        DISSONANCE_IT_TOKEN: ${{secrets.DISSONANCE_IT_TOKEN}}
       run: sbt ++${{ matrix.scala }} clean coverage test

@@ -14,6 +14,8 @@ jobs:
       with:
         java-version: 11
     - name: Generate code coverage
+      env:
+        DISSONANCE_IT_TOKEN: ${{secrets.DISSONANCE_IT_TOKEN}}
       run: sbt ++2.13.5 'project core' clean coverage test coverageReport
     - name: Upload coverage
       uses: codecov/codecov-action@v1
