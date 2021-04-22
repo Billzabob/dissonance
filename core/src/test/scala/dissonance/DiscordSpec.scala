@@ -2,7 +2,7 @@ package dissonance
 
 import cats.effect.kernel.Deferred
 import cats.effect.std.Queue
-import cats.effect.{IO, Resource}
+import cats.effect._
 import cats.syntax.all._
 import dissonance.data._
 import dissonance.data.events.{MessageCreate, Ready}
