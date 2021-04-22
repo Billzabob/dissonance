@@ -23,7 +23,7 @@ object DiscordSpec extends IOSuite {
       discord <- Discord.make(token.value)
     } yield discord
 
-  private val testChannelId: Snowflake = 695189617820827761L
+  private val testChannelId: Snowflake = 834670988083855370L
 
   def withBackgroundProcessing(discord: Discord[IO])(runExpectation: (SessionId, EventQueue) => IO[Expectations]): IO[Expectations] =
     Resource
