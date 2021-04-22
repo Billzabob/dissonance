@@ -14,6 +14,7 @@ object Dependencies {
     val enumeratum      = "1.6.1"
     val weaverTest      = "0.7.1"
     val websocketClient = "0.5.0-M4"
+    val ciris           = "2.0.0-RC2"
   }
 
   object Compile {
@@ -32,6 +33,7 @@ object Dependencies {
     val Test       = "test"
     val scalaTest  = "org.scalatest"       %% "scalatest"   % Versions.scalaTest  % Test
     val weaverTest = "com.disneystreaming" %% "weaver-cats" % Versions.weaverTest % Test
+    val ciris      = "is.cir"              %% "ciris"       % Versions.ciris      % Test
   }
 
   import Compile._
@@ -46,6 +48,7 @@ object Dependencies {
     scalaTest,
     catsEffect,
     weaverTest,
-    websocketClient
+    websocketClient,
+    ciris
   ) ++ enumeratum ++ circe
 }

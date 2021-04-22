@@ -17,7 +17,11 @@ object DiscordSpec extends IOSuite {
 
   override type Res = Discord[IO]
 
-  override def sharedResource: Resource[IO, Res] = Discord.make("")
+  override def sharedResource: Resource[IO, Res] =
+    for {
+      token   <- Resource.eval(ciris.env("DISSONANCE_IT_TOKEN").secret.load[IO])
+      discord <- Discord.make(token.value)
+    } yield discord
 
   private val testChannelId: Snowflake = 695189617820827761L
 
