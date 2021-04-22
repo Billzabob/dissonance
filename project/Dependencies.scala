@@ -4,12 +4,12 @@ object Dependencies {
 
   object Versions {
     val fs2             = "3.0.1"
-    val cats            = "2.5.0"
+    val cats            = "2.6.0"
     val circe           = "0.13.0"
     val http4s          = "1.0.0-M21"
     val newtype         = "0.4.4"
-    val refined         = "0.9.23"
-    val scalaTest       = "3.2.7"
+    val refined         = "0.9.24"
+    val scalaTest       = "3.2.8"
     val catsEffect      = "3.0.2"
     val enumeratum      = "1.6.1"
     val weaverTest      = "0.7.1"
