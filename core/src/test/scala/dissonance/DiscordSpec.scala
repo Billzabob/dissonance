@@ -1,8 +1,8 @@
 package dissonance
 
+import cats.effect._
 import cats.effect.kernel.Deferred
 import cats.effect.std.Queue
-import cats.effect._
 import cats.syntax.all._
 import dissonance.data._
 import dissonance.data.events.{MessageCreate, Ready}
@@ -19,7 +19,12 @@ object DiscordSpec extends IOSuite {
 
   override def sharedResource: Resource[IO, Res] =
     for {
-      token   <- Resource.eval(ciris.env("DISSONANCE_IT_TOKEN").secret.load[IO])
+      token <- Resource.eval(
+                 ciris
+                   .env("DISSONANCE_IT_TOKEN")
+                   .secret
+                   .load[IO]
+               )
       discord <- Discord.make(token.value)
     } yield discord
 
