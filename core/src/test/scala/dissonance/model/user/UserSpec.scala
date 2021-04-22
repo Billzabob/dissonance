@@ -1,19 +1,14 @@
 package dissonance.data
 
-import cats.effect._
 import cats.syntax.all._
+import dissonance.TestUtils._
 import dissonance.data.PremiumType.{None => _, _}
 import dissonance.data.UserRole._
-import dissonance.TestUtils._
 import io.circe.parser._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.must.Matchers
-import scala.concurrent.ExecutionContext
+import weaver.SimpleIOSuite
 
-class UserSpec extends AnyFlatSpec with Matchers {
-  implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-
-  val baseUser = User(
+object UserSpec extends SimpleIOSuite {
+  val baseUser: User = User(
     id = DiscordId(80351110224678912L),
     username = "Nelly",
     discriminator = "1337",
@@ -29,24 +24,24 @@ class UserSpec extends AnyFlatSpec with Matchers {
     publicFlags = List(HouseBravery)
   )
 
-  "a partial user json" should "be parsed correctly" in {
-    val rawJson = readFileFromResource("/models/partialUser.json").unsafeRunSync().mkString("\n")
-
-    val expectedUser = baseUser
-
-    parse(rawJson).flatMap(_.as[User]) mustBe Right(expectedUser)
+  test("a partial user json should be parsed correctly") {
+    for {
+      rawJson     <- readFileFromResource("/models/partialUser.json").compile.toList.map(_.mkString("\n"))
+      expectedUser = baseUser
+      expectations = parse(rawJson).flatMap(_.as[User]).map(parsedUser => expect(parsedUser == expectedUser))
+    } yield expectations.combineAll
   }
 
-  "a full user json" should "be parsed correctly" in {
-    val rawJson = readFileFromResource("/models/fullUser.json").unsafeRunSync().mkString("\n")
-
-    val expectedUser = baseUser.copy(
-      bot = false.some,
-      system = false.some,
-      mfaEnabled = true.some,
-      locale = "en".some
-    )
-
-    parse(rawJson).flatMap(_.as[User]) mustBe Right(expectedUser)
+  test("a full user json should be parsed correctly") {
+    for {
+      rawJson <- readFileFromResource("/models/fullUser.json").compile.toList.map(_.mkString("\n"))
+      expectedUser = baseUser.copy(
+                       bot = false.some,
+                       system = false.some,
+                       mfaEnabled = true.some,
+                       locale = "en".some
+                     )
+      expectations = parse(rawJson).flatMap(_.as[User]).map(parsedUser => expect(parsedUser == expectedUser))
+    } yield expectations.combineAll
   }
 }

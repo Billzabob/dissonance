@@ -1,6 +1,7 @@
 import Dependencies._
 
-lazy val dissonance = project.in(file("."))
+lazy val dissonance = project
+  .in(file("."))
   .settings(commonSettings, releaseSettings, publish / skip := true)
   .aggregate(core)
 
@@ -13,6 +14,7 @@ lazy val core = project
     fork := true,                         // Fork to separate process
     connectInput := true,                 // Connects stdin to sbt during forked runs
     outputStrategy := Some(StdoutOutput), // Get rid of output prefix
+    testFrameworks += new TestFramework("weaver.framework.CatsEffect")
   )
 
 lazy val docs = project
@@ -38,7 +40,7 @@ lazy val commonSettings = Seq(
     case _                       => Nil
   }) ++ dependencies,
   addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
-  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.11.3" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.11.3" cross CrossVersion.full)
 )
 
 lazy val releaseSettings = Seq(
