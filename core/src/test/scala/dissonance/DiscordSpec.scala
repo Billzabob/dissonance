@@ -17,7 +17,7 @@ object DiscordSpec extends IOSuite {
 
   override type Res = Discord[IO]
 
-  override def sharedResource: Resource[IO, Res] = Discord.make("ODMzNDYwNTk5NjM0NjU3MzAz.YHyqqw.iUzbAV3pamMHVxh2KPBJ8QDUYDg")
+  override def sharedResource: Resource[IO, Res] = Discord.make("")
 
   private val testChannelId: Snowflake = 695189617820827761L
 
