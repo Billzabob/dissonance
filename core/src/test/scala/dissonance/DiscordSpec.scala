@@ -53,7 +53,7 @@ object DiscordSpec extends IOSuite {
         }
       }
 
-  test("sendMessage should create MessageCreate event") { discord =>
+  test("sendMessage ('ping') should create MessageCreate event") { discord =>
     withBackgroundProcessing(discord) { case (_, queue) =>
       val pingMessage = "ping"
       for {
