@@ -4,3 +4,5 @@ metals.sbt
 .bloop
 .idea/
 %LOCALAPPDATA%/
+**.secret
+.bsp/

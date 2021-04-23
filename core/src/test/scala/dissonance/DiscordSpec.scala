@@ -4,6 +4,7 @@ import cats.effect._
 import cats.effect.kernel.Deferred
 import cats.effect.std.Queue
 import cats.syntax.all._
+import ciris.Secret
 import dissonance.data._
 import dissonance.data.events.{MessageCreate, Ready}
 import org.http4s.Uri
@@ -17,14 +18,18 @@ object DiscordSpec extends IOSuite {
 
   override type Res = Discord[IO]
 
+  private def loadBotToken: Resource[IO, Secret[String]] =
+    for {
+      token <- ciris
+                 .env("DISSONANCE_IT_TOKEN")
+                 .or(ciris.file(TestUtils.getResourcePath("/DISSONANCE_IT_TOKEN.secret")))
+                 .secret
+                 .resource[IO]
+    } yield token
+
   override def sharedResource: Resource[IO, Res] =
     for {
-      token <- Resource.eval(
-                 ciris
-                   .env("DISSONANCE_IT_TOKEN")
-                   .secret
-                   .load[IO]
-               )
+      token   <- loadBotToken
       discord <- Discord.make(token.value)
     } yield discord
 
