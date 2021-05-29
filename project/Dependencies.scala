@@ -6,7 +6,7 @@ object Dependencies {
     val cats            = "2.6.0"
     val catsEffect      = "3.0.2"
     val circe           = "0.13.0"
-    val ciris           = "2.0.0-RC2"
+    val ciris           = "2.0.1"
     val enumeratum      = "1.6.1"
     val fs2             = "3.0.1"
     val http4s          = "1.0.0-M21"
