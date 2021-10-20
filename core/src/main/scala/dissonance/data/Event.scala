@@ -31,7 +31,7 @@ object events {
       notFound: Option[List[Json]],
       presences: Option[List[Presence]],
       nonce: Option[String]
-  )                                                                                                                                                extends Event
+  ) extends Event
   case class GuildMemberRemove(guildId: Snowflake, user: User)                                                                                     extends Event
   case class GuildMemberUpdate(guildId: Snowflake, roles: List[Snowflake], user: User, nick: Option[String], premiumSince: Option[OffsetDateTime]) extends Event
   case class GuildRoleCreate(guildId: Snowflake, role: GuildRole)                                                                                  extends Event
@@ -60,7 +60,7 @@ object events {
       targetUserType: Option[TargetUserType],
       temporary: Boolean,
       uses: Int
-  )                                                                                                                                                              extends Event
+  ) extends Event
   case class InviteDelete(channelId: Snowflake, guildId: Option[Snowflake], code: String)                                                                        extends Event
   case class MessageCreate(message: Message)                                                                                                                     extends Event
   case class MessageDelete(id: Snowflake, channelId: Snowflake, guildId: Option[Snowflake])                                                                      extends Event
