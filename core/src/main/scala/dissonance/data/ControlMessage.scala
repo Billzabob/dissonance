@@ -26,7 +26,7 @@ object ControlMessage {
 
   implicit val dispatchDecoder: Decoder[Dispatch] = cursor =>
     for {
-      eventName      <- cursor.get[String]("t") // TODO: How to use decodeAccumulating?
+      eventName <- cursor.get[String]("t") // TODO: How to use decodeAccumulating?
       sequenceNumber <- cursor.get[Int]("s")
       event          <- Event.decodeEventName(eventName, cursor.downField("d"))
     } yield Dispatch(sequenceNumber, event)

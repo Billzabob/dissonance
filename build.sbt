@@ -11,8 +11,8 @@ lazy val core = project
   .settings(
     name := "dissonance",
     // TODO: Remove below here when we remove Main.scala
-    fork := true,                         // Fork to separate process
-    connectInput := true,                 // Connects stdin to sbt during forked runs
+    fork           := true,               // Fork to separate process
+    connectInput   := true,               // Connects stdin to sbt during forked runs
     outputStrategy := Some(StdoutOutput), // Get rid of output prefix
     testFrameworks += new TestFramework("weaver.framework.CatsEffect")
   )
@@ -21,15 +21,15 @@ lazy val docs = project
   .in(file("dissonance-docs"))
   .settings(
     commonSettings,
-    mdocIn := file("docs/README.md"),
-    mdocOut := file("README.md"),
+    mdocIn         := file("docs/README.md"),
+    mdocOut        := file("README.md"),
     publish / skip := true
   )
   .dependsOn(core)
   .enablePlugins(MdocPlugin)
 
 lazy val commonSettings = Seq(
-  scalaVersion := "2.13.5",
+  scalaVersion       := "2.13.5",
   crossScalaVersions := List(scalaVersion.value, "2.12.12"),
   scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, n)) if n >= 13 => Seq("-Ymacro-annotations")
@@ -45,8 +45,8 @@ lazy val commonSettings = Seq(
 
 lazy val releaseSettings = Seq(
   organization := "com.github.billzabob",
-  homepage := Some(url("https://github.com/billzabob/dissonance")),
-  licenses := Seq("LGPL-3.0" -> url("https://www.gnu.org/licenses/lgpl-3.0.en.html")),
+  homepage     := Some(url("https://github.com/billzabob/dissonance")),
+  licenses     := Seq("LGPL-3.0" -> url("https://www.gnu.org/licenses/lgpl-3.0.en.html")),
   developers := List(
     Developer(
       "billzabob",
